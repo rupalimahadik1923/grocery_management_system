@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Point of Sale (POS) | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/pos.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    /* Thermal Receipt Styling */
+    .receipt-container {
+      background: #ffffff;
+      padding: 24px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      color: #111;
+      line-height: 1.4;
+      max-width: 360px;
+      margin: 0 auto;
+      border: 1px dashed #cbd5e1;
+      box-shadow: var(--shadow-sm);
+    }
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .receipt-title {
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .receipt-divider {
+      border-top: 1px dashed #475569;
+      margin: 8px 0;
+    }
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+    }
+    .receipt-row.bold {
+      font-weight: bold;
+    }
+    .receipt-table {
+      width: 100%;
+      margin: 8px 0;
+      border-collapse: collapse;
+    }
+    .receipt-table th {
+      text-align: left;
+      border-bottom: 1px dashed #475569;
+      padding: 4px 0;
+    }
+    .receipt-table td {
+      padding: 4px 0;
+    }
+    .receipt-footer {
+      text-align: center;
+      font-size: 11px;
+      margin-top: 12px;
+      color: #64748b;
+    }
+
+    /* UPI QR Mock */
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      margin: 16px 0;
+    }
+    .qr-placeholder {
+      width: 160px;
+      height: 160px;
+      background: #0f172a;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      text-align: center;
+      padding: 10px;
+    }
+
+    /* Payment Tabs */
+    .payment-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .payment-tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--transition-fast);
+    }
+    .payment-tab-btn.active {
+      background: var(--primary-600);
+      color: #ffffff;
+    }
+
+    .quick-cash-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .quick-cash-pill {
+      padding: 6px 12px;
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .quick-cash-pill:hover {
+      background: var(--gray-200);
+    }
+
+    .shortcut-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--gray-700);
+      margin-left: 4px;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #receipt-print-area, #receipt-print-area * {
+        visibility: visible;
+      }
+      #receipt-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body" style="padding: 16px 24px;">
+        <div class="pos-layout">
+          <!-- LEFT COLUMN: Product Catalog & Search -->
+          <div class="pos-catalog-panel">
+            <div class="pos-search-bar">
+              <input 
+                type="text" 
+                id="pos-barcode-input" 
+                class="form-control" 
+                placeholder="Scan barcode or type item name / SKU... (Press Enter to add)" 
+                autofocus 
+                autocomplete="off"
+              />
+              <button class="btn btn-secondary" id="btn-search-focus" title="Scan Barcode (F2)">
+                🔍 Scan
+              </button>
+            </div>
+
+            <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <span><span class="shortcut-badge">F2</span> Focus Scan</span>
+              <span><span class="shortcut-badge">F4</span> Customer Lookup</span>
+              <span><span class="shortcut-badge">F8</span> Tender / Pay</span>
+              <span><span class="shortcut-badge">Esc</span> Clear</span>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="pos-category-pills" id="pos-category-pills">
+              <button class="category-pill active" data-category="ALL">All Items</button>
+              <!-- Dynamic Category Pills Injected Here -->
+            </div>
+
+            <!-- Product Grid -->
+            <div class="pos-product-grid" id="pos-product-grid">
+              <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-500);">
+                Loading catalog items...
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Order Cart & Bill Tender -->
+          <div class="pos-cart-panel">
+            <div class="pos-cart-header">
+              <div>
+                <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900);">Current Order</h2>
+                <div style="font-size: 12px; color: var(--gray-500);" id="cart-ticket-num">Ticket #ORD-0001</div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-secondary" id="cart-customer-btn" style="padding: 6px 10px; font-size: 12px;">
+                  👤 <span id="cart-customer-label">Walk-in</span>
+                </button>
+                <button class="btn btn-secondary" id="btn-clear-cart" title="Clear Order" style="padding: 6px 10px; color: var(--accent-rose);">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="pos-cart-items" id="pos-cart-list">
+              <!-- Dynamic Cart Items Injected Here -->
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="pos-cart-summary">
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <span id="cart-subtotal">₹0.00</span>
+              </div>
+              <div class="summary-row" style="align-items: center;">
+                <span>Discount (%)</span>
+                <input 
+                  type="number" 
+                  id="cart-discount-input" 
+                  value="0" 
+                  min="0" 
+                  max="100" 
+                  style="width: 60px; padding: 2px 6px; font-size: 12px; text-align: right; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
+                />
+              </div>
+              <div class="summary-row">
+                <span>CGST (2.5%)</span>
+                <span id="cart-cgst">₹0.00</span>
+              </div>
+              <div class="summary-row">
+                <span>SGST (2.5%)</span>
+                <span id="cart-sgst">₹0.00</span>
+              </div>
+              <div class="summary-row total">
+                <span>Payable Total</span>
+                <span id="cart-grand-total">₹0.00</span>
+              </div>
+
+              <button class="checkout-btn" id="btn-open-tender">
+                💳 Pay & Checkout (F8)
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- CUSTOMER SELECTOR / ATTACH MODAL -->
+  <div class="modal-overlay" id="customer-modal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Customer & Loyalty Lookup</h3>
+        <button class="modal-close-btn" id="close-customer-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <div class="form-group">
+          <label class="form-label">Phone Number (10 digits)</label>
+          <input type="text" id="cust-phone-input" class="form-control" placeholder="Enter mobile number..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Customer Name</label>
+          <input type="text" id="cust-name-input" class="form-control" placeholder="Customer Name..." />
+        </div>
+        <div id="cust-lookup-status" style="font-size: 12px; margin-bottom: 12px;"></div>
+      </div>
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn btn-secondary" id="btn-cancel-customer">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-customer">Attach Customer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT TENDER MODAL -->
+  <div class="modal-overlay" id="tender-modal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Payment Tender</h3>
+        <button class="modal-close-btn" id="close-tender-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <div style="background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--primary-800); font-weight: 600; text-transform: uppercase;">Amount To Pay</div>
+          <div style="font-size: 28px; font-weight: 800; color: var(--primary-700);" id="tender-modal-total">₹0.00</div>
+        </div>
+
+        <div class="payment-tabs">
+          <button class="payment-tab-btn active" data-mode="CASH">💵 Cash</button>
+          <button class="payment-tab-btn" data-mode="UPI">📱 UPI / QR</button>
+          <button class="payment-tab-btn" data-mode="CARD">💳 Card</button>
+        </div>
+
+        <!-- CASH SECTION -->
+        <div id="tender-cash-section">
+          <div class="form-group">
+            <label class="form-label">Tendered Cash Amount (₹)</label>
+            <input type="number" id="tender-amount-input" class="form-control" style="font-size: 18px; font-weight: 700;" placeholder="0.00" />
+            <div class="quick-cash-pills">
+              <button class="quick-cash-pill" data-amount="EXACT">Exact</button>
+              <button class="quick-cash-pill" data-amount="100">₹100</button>
+              <button class="quick-cash-pill" data-amount="200">₹200</button>
+              <button class="quick-cash-pill" data-amount="500">₹500</button>
+              <button class="quick-cash-pill" data-amount="2000">₹2,000</button>
+            </div>
+          </div>
+          <div class="summary-row" style="font-size: 15px; font-weight: 600; padding: 8px 0; border-top: 1px dashed var(--gray-300);">
+            <span>Change Due:</span>
+            <span id="tender-change-due" style="color: var(--primary-700);">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- UPI SECTION -->
+        <div id="tender-upi-section" style="display: none;">
+          <div class="qr-box">
+            <div class="qr-placeholder">
+              [ UPI QR CODE ]<br>
+              <small>Scan to Pay</small>
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--gray-700);">GPay • PhonePe • Paytm • BHIM</div>
+            <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">UPI ID: freshgrocery@upi</div>
+          </div>
+        </div>
+
+        <!-- CARD SECTION -->
+        <div id="tender-card-section" style="display: none;">
+          <div style="padding: 24px; text-align: center; background: var(--gray-50); border-radius: var(--radius-md);">
+            <div style="font-size: 32px; margin-bottom: 8px;">💳</div>
+            <div style="font-weight: 600; font-size: 14px;">Swipe or Insert Card on POS Terminal</div>
+            <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">Visa, Mastercard, RuPay accepted</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn btn-secondary" id="btn-cancel-tender">Cancel</button>
+        <button class="btn btn-primary" id="btn-complete-payment" style="padding: 10px 20px;">
+          ✅ Complete & Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THERMAL RECEIPT MODAL -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Receipt & Invoice</h3>
+        <button class="modal-close-btn" id="close-receipt-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px; max-height: 70vh; overflow-y: auto;">
+        <div id="receipt-print-area">
+          <div class="receipt-container" id="thermal-receipt-content">
+            <!-- Dynamically Rendered Receipt Content -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: space-between;">
+        <button class="btn btn-secondary" id="btn-new-order">➕ New Order</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" id="btn-print-receipt">🖨️ Print Receipt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    // Initialize Layout
+    Layout.init({ activePage: 'pos', title: 'Point of Sale (POS)' });
+
+    // State
+    let products = [];
+    let categories = [];
+    let selectedCategory = 'ALL';
+    let cart = [];
+    let attachedCustomer = null;
+    let paymentMode = 'CASH';
+    let currentTicketNum = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+    let lastCompletedSale = null;
+
+    document.getElementById('cart-ticket-num').textContent = `Ticket #${currentTicketNum}`;
+
+    // Elements
+    const barcodeInput = document.getElementById('pos-barcode-input');
+    const categoryPillsContainer = document.getElementById('pos-category-pills');
+    const productGrid = document.getElementById('pos-product-grid');
+    const cartList = document.getElementById('pos-cart-list');
+    const cartSubtotalEl = document.getElementById('cart-subtotal');
+    const cartDiscountInput = document.getElementById('cart-discount-input');
+    const cartCgstEl = document.getElementById('cart-cgst');
+    const cartSgstEl = document.getElementById('cart-sgst');
+    const cartGrandTotalEl = document.getElementById('cart-grand-total');
+    const btnOpenTender = document.getElementById('btn-open-tender');
+
+    // Modals
+    const tenderModal = document.getElementById('tender-modal');
+    const customerModal = document.getElementById('customer-modal');
+    const receiptModal = document.getElementById('receipt-modal');
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        barcodeInput.focus();
+        barcodeInput.select();
+      } else if (e.key === 'F4') {
+        e.preventDefault();
+        openCustomerModal();
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        if (cart.length > 0) openTenderModal();
+      } else if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    });
+
+    // Barcode scanner / enter handler
+    barcodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleBarcodeInput(barcodeInput.value.trim());
+      }
+    });
+
+    document.getElementById('btn-search-focus')?.addEventListener('click', () => {
+      handleBarcodeInput(barcodeInput.value.trim());
+    });
+
+    function handleBarcodeInput(query) {
+      if (!query) return;
+      const lower = query.toLowerCase();
+
+      // Find by exact barcode, SKU, or name match
+      let match = products.find(p => 
+        (p.barcode && p.barcode.toLowerCase() === lower) ||
+        (p.sku && p.sku.toLowerCase() === lower)
+      );
+
+      if (!match) {
+        match = products.find(p => p.name.toLowerCase().includes(lower));
+      }
+
+      if (match) {
+        addToCart(match);
+        barcodeInput.value = '';
+      } else {
+        showToast('Product not found for: ' + query, 'error');
+      }
+    }
+
+    // Load Initial Data
+    async function initPos() {
+      try {
+        const [catsRes, prodsRes] = await Promise.all([
+          Api.get('/categories').catch(() => []),
+          Api.get('/products').catch(() => [])
+        ]);
+
+        categories = Array.isArray(catsRes) ? catsRes : (catsRes.data || []);
+        products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+
+        renderCategoryPills();
+        renderProductGrid();
+        renderCart();
+      } catch (err) {
+        console.error('Failed to load POS catalog:', err);
+        showToast('Error loading catalog data', 'error');
+      }
+    }
+
+    function renderCategoryPills() {
+      categoryPillsContainer.innerHTML = `
+        <button class="category-pill ${selectedCategory === 'ALL' ? 'active' : ''}" data-category="ALL">All Items</button>
+        ${categories.map(cat => `
+          <button class="category-pill ${selectedCategory === cat.id ? 'active' : ''}" data-category="${cat.id}">
+            ${cat.icon || '📦'} ${cat.name}
+          </button>
+        `).join('')}
+      `;
+
+      categoryPillsContainer.querySelectorAll('.category-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedCategory = btn.dataset.category;
+          renderCategoryPills();
+          renderProductGrid();
+        });
+      });
+    }
+
+    function renderProductGrid() {
+      let filtered = products;
+      if (selectedCategory !== 'ALL') {
+        filtered = filtered.filter(p => p.categoryId === selectedCategory);
+      }
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-400);">
+            No products found in this category.
+          </div>
+        `;
+        return;
+      }
+
+      productGrid.innerHTML = filtered.map(prod => `
+        <div class="pos-product-card" data-id="${prod.id}">
+          <div style="font-size: 28px; margin-bottom: 6px; text-align: center;">
+            ${getProductIcon(prod.name)}
+          </div>
+          <div class="pos-product-name" title="${prod.name}">${prod.name}</div>
+          <div style="font-size: 11px; color: var(--gray-400); margin-bottom: 4px;">${prod.sku || ''}</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
+            <div>
+              <div class="pos-product-price">₹${prod.sellingPrice?.toFixed(2) || '0.00'}</div>
+              <div class="pos-product-stock">Stock: ${prod.currentStock || 0} ${prod.unit || ''}</div>
+            </div>
+            <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; border-radius: var(--radius-sm);">+ Add</button>
+          </div>
+        </div>
+      `).join('');
+
+      productGrid.querySelectorAll('.pos-product-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const prod = products.find(p => p.id === card.dataset.id);
+          if (prod) addToCart(prod);
+        });
+      });
+    }
+
+    function getProductIcon(name) {
+      const n = (name || '').toLowerCase();
+      if (n.includes('milk') || n.includes('butter') || n.includes('cheese') || n.includes('curd')) return '🥛';
+      if (n.includes('apple') || n.includes('fruit') || n.includes('banana')) return '🍎';
+      if (n.includes('bread') || n.includes('bun') || n.includes('toast')) return '🍞';
+      if (n.includes('oil') || n.includes('atta') || n.includes('salt') || n.includes('rice')) return '🌾';
+      if (n.includes('coke') || n.includes('pepsi') || n.includes('juice') || n.includes('tea')) return '🧃';
+      if (n.includes('chips') || n.includes('lays') || n.includes('biscuit') || n.includes('noodle')) return '🍿';
+      if (n.includes('surf') || n.includes('soap') || n.includes('wash') || n.includes('clean')) return '🧼';
+      return '🛒';
+    }
+
+    function addToCart(product) {
+      const existing = cart.find(item => item.productId === product.id);
+      if (existing) {
+        existing.quantity += 1;
+        existing.total = existing.quantity * existing.unitPrice;
+      } else {
+        cart.push({
+          productId: product.id,
+          productName: product.name,
+          sku: product.sku,
+          unitPrice: product.sellingPrice,
+          unit: product.unit || 'PCS',
+          quantity: 1,
+          total: product.sellingPrice
+        });
+      }
+      renderCart();
+    }
+
+    function updateCartQty(productId, delta) {
+      const item = cart.find(i => i.productId === productId);
+      if (!item) return;
+
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.productId !== productId);
+      } else {
+        item.total = item.quantity * item.unitPrice;
+      }
+      renderCart();
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(i => i.productId !== productId);
+      renderCart();
+    }
+
+    function calculateCartTotals() {
+      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+      const discountPct = parseFloat(cartDiscountInput.value) || 0;
+      const discountAmount = (subtotal * discountPct) / 100;
+      const taxableAmount = Math.max(0, subtotal - discountAmount);
+      const cgst = taxableAmount * 0.025; // 2.5%
+      const sgst = taxableAmount * 0.025; // 2.5%
+      const grandTotal = taxableAmount + cgst + sgst;
+
+      return { subtotal, discountPct, discountAmount, taxableAmount, cgst, sgst, grandTotal };
+    }
+
+    function renderCart() {
+      if (cart.length === 0) {
+        cartList.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--gray-400); text-align: center; padding: 20px;">
+            <div style="font-size: 40px; margin-bottom: 8px;">🛒</div>
+            <div style="font-weight: 600; font-size: 14px; color: var(--gray-600);">Cart is Empty</div>
+            <div style="font-size: 12px; margin-top: 4px;">Scan barcode or click items from catalog to start order.</div>
+          </div>
+        `;
+      } else {
+        cartList.innerHTML = cart.map(item => `
+          <div class="pos-cart-item">
+            <div style="flex: 1; padding-right: 8px;">
+              <div style="font-size: 13px; font-weight: 600; color: var(--gray-900);">${item.productName}</div>
+              <div style="font-size: 11px; color: var(--gray-500);">₹${item.unitPrice.toFixed(2)} / ${item.unit}</div>
+            </div>
+            <div class="pos-item-controls">
+              <button class="pos-qty-btn btn-qty-minus" data-id="${item.productId}">-</button>
+              <span style="font-weight: 700; min-width: 20px; text-align: center; font-size: 13px;">${item.quantity}</span>
+              <button class="pos-qty-btn btn-qty-plus" data-id="${item.productId}">+</button>
+              <div style="font-weight: 700; width: 64px; text-align: right; font-size: 13px; color: var(--primary-700);">
+                ₹${item.total.toFixed(2)}
+              </div>
+              <button class="btn-remove-item" data-id="${item.productId}" style="background: none; border: none; color: var(--gray-400); font-size: 16px; cursor: pointer; padding: 2px 6px;">&times;</button>
+            </div>
+          </div>
+        `).join('');
+
+        cartList.querySelectorAll('.btn-qty-minus').forEach(b => {
+          b.addEventListener('click', () => updateCartQty(b.dataset.id, -1));
+        });
+        cartList.querySelectorAll('.btn-qty-plus').forEach(b => {
+          b.addEventListener('click', () => updateCartQty(b.dataset.id, 1));
+        });
+        cartList.querySelectorAll('.btn-remove-item').forEach(b => {
+          b.addEventListener('click', () => removeFromCart(b.dataset.id));
+        });
+      }
+
+      const totals = calculateCartTotals();
+      cartSubtotalEl.textContent = `₹${totals.subtotal.toFixed(2)}`;
+      cartCgstEl.textContent = `₹${totals.cgst.toFixed(2)}`;
+      cartSgstEl.textContent = `₹${totals.sgst.toFixed(2)}`;
+      cartGrandTotalEl.textContent = `₹${totals.grandTotal.toFixed(2)}`;
+      btnOpenTender.textContent = `💳 Pay & Checkout (F8) - ₹${totals.grandTotal.toFixed(2)}`;
+    }
+
+    cartDiscountInput.addEventListener('input', renderCart);
+
+    document.getElementById('btn-clear-cart').addEventListener('click', () => {
+      if (cart.length > 0 && confirm('Clear all items from current order?')) {
+        cart = [];
+        renderCart();
+      }
+    });
+
+    // Customer Selector Handling
+    function openCustomerModal() {
+      customerModal.classList.add('active');
+      document.getElementById('cust-phone-input').focus();
+    }
+    document.getElementById('cart-customer-btn').addEventListener('click', openCustomerModal);
+    document.getElementById('close-customer-modal').addEventListener('click', () => customerModal.classList.remove('active'));
+    document.getElementById('btn-cancel-customer').addEventListener('click', () => customerModal.classList.remove('active'));
+
+    document.getElementById('cust-phone-input').addEventListener('blur', async (e) => {
+      const phone = e.target.value.trim();
+      const statusEl = document.getElementById('cust-lookup-status');
+      if (phone.length >= 10) {
+        statusEl.innerHTML = '<span style="color: var(--gray-500);">Searching customer records...</span>';
+        try {
+          const res = await Api.get(`/customers/phone/${phone}`).catch(() => null);
+          if (res && res.id) {
+            document.getElementById('cust-name-input').value = res.name;
+            statusEl.innerHTML = `<span style="color: var(--primary-700); font-weight: 600;">✓ Found: ${res.name} (Tier: ${res.tier}, Points: ${res.loyaltyPoints})</span>`;
+          } else {
+            statusEl.innerHTML = '<span style="color: var(--gray-500);">New customer phone number</span>';
+          }
+        } catch {
+          statusEl.innerHTML = '';
+        }
+      }
+    });
+
+    document.getElementById('btn-save-customer').addEventListener('click', () => {
+      const phone = document.getElementById('cust-phone-input').value.trim();
+      const name = document.getElementById('cust-name-input').value.trim();
+      if (phone) {
+        attachedCustomer = { phone, name: name || 'Valued Customer' };
+        document.getElementById('cart-customer-label').textContent = `${name || phone}`;
+      } else {
+        attachedCustomer = null;
+        document.getElementById('cart-customer-label').textContent = 'Walk-in';
+      }
+      customerModal.classList.remove('active');
+    });
+
+    // Payment Tender Modal
+    function openTenderModal() {
+      if (cart.length === 0) {
+        showToast('Cart is empty. Add products first.', 'error');
+        return;
+      }
+      const totals = calculateCartTotals();
+      document.getElementById('tender-modal-total').textContent = `₹${totals.grandTotal.toFixed(2)}`;
+      document.getElementById('tender-amount-input').value = totals.grandTotal.toFixed(2);
+      document.getElementById('tender-change-due').textContent = '₹0.00';
+      tenderModal.classList.add('active');
+      document.getElementById('tender-amount-input').focus();
+    }
+
+    btnOpenTender.addEventListener('click', openTenderModal);
+    document.getElementById('close-tender-modal').addEventListener('click', () => tenderModal.classList.remove('active'));
+    document.getElementById('btn-cancel-tender').addEventListener('click', () => tenderModal.classList.remove('active'));
+
+    // Tender Mode Tabs
+    document.querySelectorAll('.payment-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        paymentMode = btn.dataset.mode;
+
+        document.getElementById('tender-cash-section').style.display = paymentMode === 'CASH' ? 'block' : 'none';
+        document.getElementById('tender-upi-section').style.display = paymentMode === 'UPI' ? 'block' : 'none';
+        document.getElementById('tender-card-section').style.display = paymentMode === 'CARD' ? 'block' : 'none';
+      });
+    });
+
+    // Cash tender calculation
+    const tenderAmountInput = document.getElementById('tender-amount-input');
+    tenderAmountInput.addEventListener('input', updateChangeDue);
+
+    function updateChangeDue() {
+      const totals = calculateCartTotals();
+      const tendered = parseFloat(tenderAmountInput.value) || 0;
+      const change = Math.max(0, tendered - totals.grandTotal);
+      document.getElementById('tender-change-due').textContent = `₹${change.toFixed(2)}`;
+    }
+
+    document.querySelectorAll('.quick-cash-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const amt = pill.dataset.amount;
+        const totals = calculateCartTotals();
+        if (amt === 'EXACT') {
+          tenderAmountInput.value = totals.grandTotal.toFixed(2);
+        } else {
+          tenderAmountInput.value = amt;
+        }
+        updateChangeDue();
+      });
+    });
+
+    // Complete Checkout Action
+    document.getElementById('btn-complete-payment').addEventListener('click', async () => {
+      const totals = calculateCartTotals();
+      const tendered = parseFloat(tenderAmountInput.value) || totals.grandTotal;
+
+      if (paymentMode === 'CASH' && tendered < totals.grandTotal) {
+        showToast('Tendered cash is less than payable grand total!', 'error');
+        return;
+      }
+
+      const salePayload = {
+        subtotal: totals.subtotal,
+        discountAmount: totals.discountAmount,
+        taxAmount: totals.cgst + totals.sgst,
+        grandTotal: totals.grandTotal,
+        paymentMode: paymentMode,
+        customerName: attachedCustomer ? attachedCustomer.name : 'Walk-in Customer',
+        customerPhone: attachedCustomer ? attachedCustomer.phone : null,
+        items: cart.map(i => ({
+          productId: i.productId,
+          productName: i.productName,
+          sku: i.sku,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          total: i.total
+        }))
+      };
+
+      try {
+        const completeBtn = document.getElementById('btn-complete-payment');
+        completeBtn.disabled = true;
+        completeBtn.textContent = 'Processing...';
+
+        const res = await Api.post('/sales', salePayload);
+        const sale = (res && res.data) || res;
+        lastCompletedSale = sale;
+
+        tenderModal.classList.remove('active');
+        showToast('Sale completed successfully! Receipt generated.', 'success');
+
+        // Reset Cart and Ticket
+        cart = [];
+        attachedCustomer = null;
+        document.getElementById('cart-customer-label').textContent = 'Walk-in';
+        currentTicketNum = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('cart-ticket-num').textContent = `Ticket #${currentTicketNum}`;
+        renderCart();
+
+        // Refresh product stock list in background
+        Api.get('/products').then(prodsRes => {
+          products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+          renderProductGrid();
+        }).catch(() => {});
+
+        // Show Thermal Receipt Preview
+        renderThermalReceipt(sale, totals, tendered);
+        receiptModal.classList.add('active');
+
+      } catch (err) {
+        showToast(err.message || 'Failed to complete checkout', 'error');
+      } finally {
+        const completeBtn = document.getElementById('btn-complete-payment');
+        completeBtn.disabled = false;
+        completeBtn.textContent = '✅ Complete & Print Receipt';
+      }
+    });
+
+    function renderThermalReceipt(sale, totals, tendered) {
+      const receiptContent = document.getElementById('thermal-receipt-content');
+      const now = new Date();
+      const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+
+      receiptContent.innerHTML = `
+        <div class="receipt-header">
+          <div class="receipt-title">FreshGrocery Supermarket</div>
+          <div>Green Valley Complex, Bengaluru</div>
+          <div>GSTIN: 29ABCDE1234F1Z5 | Ph: 9876543210</div>
+          <div class="receipt-divider"></div>
+          <div class="receipt-row"><span>Receipt #:</span><strong>${sale.receiptNumber || 'RCP-TEMP'}</strong></div>
+          <div class="receipt-row"><span>Date/Time:</span><span>${dateStr}</span></div>
+          <div class="receipt-row"><span>Cashier:</span><span>${sale.cashierName || 'Staff'}</span></div>
+          <div class="receipt-row"><span>Customer:</span><span>${sale.customerName || 'Walk-in'}</span></div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Price</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(sale.items || []).map(i => `
+              <tr>
+                <td>${i.productName}</td>
+                <td style="text-align: center;">${i.quantity}</td>
+                <td style="text-align: right;">₹${i.unitPrice?.toFixed(2)}</td>
+                <td style="text-align: right;">₹${i.total?.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-row"><span>Subtotal:</span><span>₹${totals.subtotal.toFixed(2)}</span></div>
+        ${totals.discountAmount > 0 ? `
+          <div class="receipt-row"><span>Discount (${totals.discountPct}%):</span><span>-₹${totals.discountAmount.toFixed(2)}</span></div>
+        ` : ''}
+        <div class="receipt-row"><span>CGST (2.5%):</span><span>₹${totals.cgst.toFixed(2)}</span></div>
+        <div class="receipt-row"><span>SGST (2.5%):</span><span>₹${totals.sgst.toFixed(2)}</span></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-row bold" style="font-size: 15px;">
+          <span>GRAND TOTAL:</span>
+          <span>₹${totals.grandTotal.toFixed(2)}</span>
+        </div>
+        <div class="receipt-row"><span>Payment Mode:</span><span>${sale.paymentMode || paymentMode}</span></div>
+        ${paymentMode === 'CASH' ? `
+          <div class="receipt-row"><span>Cash Tendered:</span><span>₹${tendered.toFixed(2)}</span></div>
+          <div class="receipt-row"><span>Change Due:</span><span>₹${Math.max(0, tendered - totals.grandTotal).toFixed(2)}</span></div>
+        ` : ''}
+
+        <div class="receipt-divider"></div>
+        <div class="receipt-footer">
+          <div>Thank you for shopping at FreshGrocery!</div>
+          <div>Items returnable within 3 days with bill.</div>
+          <div>*** EAT FRESH • LIVE HEALTHY ***</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('btn-print-receipt').addEventListener('click', () => {
+      window.print();
+    });
+
+    document.getElementById('btn-new-order').addEventListener('click', () => {
+      receiptModal.classList.remove('active');
+      barcodeInput.focus();
+    });
+
+    document.getElementById('close-receipt-modal').addEventListener('click', () => {
+      receiptModal.classList.remove('active');
+    });
+
+    function closeAllModals() {
+      tenderModal.classList.remove('active');
+      customerModal.classList.remove('active');
+      receiptModal.classList.remove('active');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    // Run on startup
+    initPos();
+  </script>
+</body>
+</html>

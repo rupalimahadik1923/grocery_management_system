@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchases | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .toolbar-container {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Dynamic PO Item Row */
+    .po-item-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 40px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      background: var(--gray-50);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- Metrics Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-pos">0</div>
+              <div class="metric-mini-lbl">Total Purchase Orders</div>
+            </div>
+            <div style="font-size: 30px;">🚚</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-in-transit" style="color: var(--accent-amber);">0</div>
+              <div class="metric-mini-lbl">Ordered / In-Transit</div>
+            </div>
+            <div style="font-size: 30px;">⏳</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-received" style="color: var(--primary-700);">0</div>
+              <div class="metric-mini-lbl">Received & Stocked</div>
+            </div>
+            <div style="font-size: 30px;">✅</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-cost">₹0.00</div>
+              <div class="metric-mini-lbl">Procurement Value</div>
+            </div>
+            <div style="font-size: 30px;">💰</div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="toolbar-container">
+          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <input 
+              type="text" 
+              id="po-search-input" 
+              class="form-control" 
+              style="max-width: 280px;" 
+              placeholder="Search PO # or supplier name..." 
+            />
+            <select id="po-status-filter" class="form-control" style="max-width: 180px;">
+              <option value="ALL">All Statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ORDERED">Ordered / In-Transit</option>
+              <option value="RECEIVED">Received & Stocked</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-create-po">➕ Create Purchase Order</button>
+        </div>
+
+        <!-- Purchase Orders Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>PO Number</th>
+                <th>Supplier</th>
+                <th>Order Date</th>
+                <th>Expected Delivery</th>
+                <th>Items Count</th>
+                <th>Total Value (₹)</th>
+                <th>Status</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="po-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading purchase orders...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- CREATE PURCHASE ORDER MODAL -->
+  <div class="modal-overlay" id="po-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Purchase Order</h3>
+        <button class="modal-close-btn" id="close-po-modal">&times;</button>
+      </div>
+      <form id="po-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label">Select Supplier *</label>
+              <select id="po-supplier" class="form-control" required>
+                <option value="">Select supplier...</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Expected Delivery Date</label>
+              <input type="date" id="po-delivery-date" class="form-control" />
+            </div>
+          </div>
+
+          <!-- Dynamic Item Rows Header -->
+          <div style="margin: 16px 0 8px; font-weight: 700; font-size: 13px; color: var(--gray-700); display: flex; justify-content: space-between; align-items: center;">
+            <span>Order Line Items</span>
+            <button type="button" class="btn btn-secondary" id="btn-add-item-row" style="font-size: 12px; padding: 4px 10px;">
+              + Add Item Line
+            </button>
+          </div>
+
+          <div id="po-items-container">
+            <!-- Dynamic Rows Injected Here -->
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--gray-300);">
+            <div style="font-size: 16px; font-weight: 700; color: var(--gray-900);">
+              PO Total: <span id="po-modal-total" style="color: var(--primary-700);">₹0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-po">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-po">Create Purchase Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'purchases', title: 'Purchases & Goods Inward' });
+
+    let purchaseOrders = [];
+    let suppliers = [];
+    let products = [];
+
+    const tableBody = document.getElementById('po-table-body');
+    const searchInput = document.getElementById('po-search-input');
+    const statusFilter = document.getElementById('po-status-filter');
+    const poModal = document.getElementById('po-modal');
+    const poForm = document.getElementById('po-form');
+    const itemsContainer = document.getElementById('po-items-container');
+
+    async function loadData() {
+      try {
+        const [posRes, supsRes, prodsRes] = await Promise.all([
+          Api.get('/purchases').catch(() => []),
+          Api.get('/suppliers').catch(() => []),
+          Api.get('/products').catch(() => [])
+        ]);
+
+        purchaseOrders = Array.isArray(posRes) ? posRes : (posRes.data || []);
+        suppliers = Array.isArray(supsRes) ? supsRes : (supsRes.data || []);
+        products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+
+        populateSupplierDropdown();
+        updateMetrics();
+        renderTable();
+      } catch (err) {
+        showToast('Error loading purchase orders: ' + err.message, 'error');
+      }
+    }
+
+    function populateSupplierDropdown() {
+      const select = document.getElementById('po-supplier');
+      select.innerHTML = `<option value="">Select supplier...</option>` + 
+        suppliers.map(s => `<option value="${s.id}">${s.name} (${s.code || 'SUP'})</option>`).join('');
+    }
+
+    function updateMetrics() {
+      const totalPos = purchaseOrders.length;
+      const inTransit = purchaseOrders.filter(p => p.status === 'ORDERED').length;
+      const received = purchaseOrders.filter(p => p.status === 'RECEIVED').length;
+      const totalVal = purchaseOrders.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+
+      document.getElementById('metric-total-pos').textContent = totalPos;
+      document.getElementById('metric-in-transit').textContent = inTransit;
+      document.getElementById('metric-received').textContent = received;
+      document.getElementById('metric-total-cost').textContent = `₹${totalVal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    }
+
+    function renderTable() {
+      const q = searchInput.value.toLowerCase().trim();
+      const st = statusFilter.value;
+
+      let filtered = purchaseOrders.filter(p => {
+        const matchesQ = !q || 
+          (p.orderNumber && p.orderNumber.toLowerCase().includes(q)) ||
+          (p.supplierName && p.supplierName.toLowerCase().includes(q));
+
+        const matchesSt = st === 'ALL' || p.status === st;
+        return matchesQ && matchesSt;
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+              No purchase orders found. Click "Create Purchase Order" to begin procurement.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = filtered.map(po => {
+        let badge = `<span class="badge badge-neutral">DRAFT</span>`;
+        if (po.status === 'ORDERED') badge = `<span class="badge badge-warning">ORDERED</span>`;
+        else if (po.status === 'RECEIVED') badge = `<span class="badge badge-success">RECEIVED</span>`;
+
+        let actionBtn = '';
+        if (po.status === 'DRAFT') {
+          actionBtn = `<button class="btn btn-secondary btn-submit-po" data-id="${po.id}" style="padding: 4px 10px; font-size: 12px;">📤 Order Goods</button>`;
+        } else if (po.status === 'ORDERED') {
+          actionBtn = `<button class="btn btn-primary btn-receive-po" data-id="${po.id}" style="padding: 4px 10px; font-size: 12px;">📦 Inward & Stock</button>`;
+        } else {
+          actionBtn = `<span style="font-size: 12px; color: var(--primary-700); font-weight: 600;">✓ Inwarded</span>`;
+        }
+
+        const itemsCount = (po.items || []).reduce((sum, i) => sum + (i.orderQty || 0), 0);
+
+        return `
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; color: var(--primary-700);">${po.orderNumber}</td>
+            <td style="font-weight: 600; color: var(--gray-900);">${po.supplierName || 'Primary Supplier'}</td>
+            <td style="font-size: 12px; color: var(--gray-600);">${po.createdAt ? po.createdAt.slice(0, 10) : '-'}</td>
+            <td style="font-size: 12px; color: var(--gray-600);">${po.expectedDeliveryDate ? po.expectedDeliveryDate.slice(0, 10) : '-'}</td>
+            <td>${itemsCount} units</td>
+            <td style="font-weight: 700; color: var(--gray-900);">₹${po.totalAmount?.toFixed(2) || '0.00'}</td>
+            <td>${badge}</td>
+            <td style="text-align: right;">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tableBody.querySelectorAll('.btn-submit-po').forEach(b => {
+        b.addEventListener('click', () => submitPurchaseOrder(b.dataset.id));
+      });
+      tableBody.querySelectorAll('.btn-receive-po').forEach(b => {
+        b.addEventListener('click', () => receivePurchaseOrder(b.dataset.id));
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+    statusFilter.addEventListener('change', renderTable);
+
+    // Modal Events
+    document.getElementById('btn-create-po').addEventListener('click', () => {
+      poForm.reset();
+      itemsContainer.innerHTML = '';
+      addItemRow();
+      poModal.classList.add('active');
+    });
+
+    document.getElementById('close-po-modal').addEventListener('click', () => poModal.classList.remove('active'));
+    document.getElementById('btn-cancel-po').addEventListener('click', () => poModal.classList.remove('active'));
+    document.getElementById('btn-add-item-row').addEventListener('click', () => addItemRow());
+
+    function addItemRow() {
+      const row = document.createElement('div');
+      row.className = 'po-item-row';
+      row.innerHTML = `
+        <select class="form-control po-item-prod" required>
+          <option value="">Select product...</option>
+          ${products.map(p => `<option value="${p.id}" data-cost="${p.costPrice}">${p.name} (Cost: ₹${p.costPrice})</option>`).join('')}
+        </select>
+        <input type="number" min="1" step="1" value="10" class="form-control po-item-qty" placeholder="Qty" required />
+        <input type="number" step="0.01" value="0.00" class="form-control po-item-cost" placeholder="Unit Cost" required />
+        <div style="font-weight: 700; font-size: 13px; text-align: right;" class="po-item-total">₹0.00</div>
+        <button type="button" class="btn-remove-row" style="background: none; border: none; color: var(--accent-rose); font-size: 16px; cursor: pointer;">&times;</button>
+      `;
+
+      const prodSelect = row.querySelector('.po-item-prod');
+      const qtyInput = row.querySelector('.po-item-qty');
+      const costInput = row.querySelector('.po-item-cost');
+      const totalDisplay = row.querySelector('.po-item-total');
+
+      prodSelect.addEventListener('change', () => {
+        const opt = prodSelect.options[prodSelect.selectedIndex];
+        const cost = parseFloat(opt.dataset.cost) || 0;
+        costInput.value = cost.toFixed(2);
+        updateRowTotal();
+      });
+
+      function updateRowTotal() {
+        const qty = parseFloat(qtyInput.value) || 0;
+        const cost = parseFloat(costInput.value) || 0;
+        const tot = qty * cost;
+        totalDisplay.textContent = `₹${tot.toFixed(2)}`;
+        recalculateModalTotal();
+      }
+
+      qtyInput.addEventListener('input', updateRowTotal);
+      costInput.addEventListener('input', updateRowTotal);
+
+      row.querySelector('.btn-remove-row').addEventListener('click', () => {
+        row.remove();
+        recalculateModalTotal();
+      });
+
+      itemsContainer.appendChild(row);
+    }
+
+    function recalculateModalTotal() {
+      let grand = 0;
+      itemsContainer.querySelectorAll('.po-item-row').forEach(row => {
+        const qty = parseFloat(row.querySelector('.po-item-qty').value) || 0;
+        const cost = parseFloat(row.querySelector('.po-item-cost').value) || 0;
+        grand += (qty * cost);
+      });
+      document.getElementById('po-modal-total').textContent = `₹${grand.toFixed(2)}`;
+    }
+
+    poForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const supSelect = document.getElementById('po-supplier');
+      const supplierId = supSelect.value;
+      const supplierName = supSelect.options[supSelect.selectedIndex]?.text || 'Supplier';
+
+      const items = [];
+      itemsContainer.querySelectorAll('.po-item-row').forEach(row => {
+        const prodSelect = row.querySelector('.po-item-prod');
+        const productId = prodSelect.value;
+        const productName = prodSelect.options[prodSelect.selectedIndex]?.text.split('(')[0].trim() || 'Item';
+        const qty = parseFloat(row.querySelector('.po-item-qty').value) || 0;
+        const cost = parseFloat(row.querySelector('.po-item-cost').value) || 0;
+
+        if (productId) {
+          items.push({
+            productId,
+            productName,
+            orderQty: qty,
+            receivedQty: 0,
+            unitCost: cost,
+            totalCost: qty * cost
+          });
+        }
+      });
+
+      if (items.length === 0) {
+        showToast('Add at least one line item to the order', 'error');
+        return;
+      }
+
+      const payload = {
+        supplierId,
+        supplierName,
+        expectedDeliveryDate: document.getElementById('po-delivery-date').value || null,
+        items
+      };
+
+      try {
+        const saveBtn = document.getElementById('btn-save-po');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Creating...';
+
+        await Api.post('/purchases', payload);
+        showToast('Purchase Order created successfully', 'success');
+
+        poModal.classList.remove('active');
+        await loadData();
+      } catch (err) {
+        showToast(err.message || 'Failed to create PO', 'error');
+      } finally {
+        const saveBtn = document.getElementById('btn-save-po');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Create Purchase Order';
+      }
+    });
+
+    async function submitPurchaseOrder(id) {
+      if (!confirm('Mark this PO as ORDERED and sent to supplier?')) return;
+      try {
+        await Api.post(`/purchases/${id}/submit`, {});
+        showToast('PO status updated to ORDERED', 'success');
+        await loadData();
+      } catch (err) {
+        showToast(err.message || 'Action failed', 'error');
+      }
+    }
+
+    async function receivePurchaseOrder(id) {
+      if (!confirm('Confirm delivery and inward inventory stock into warehouse batches?')) return;
+      try {
+        await Api.post(`/purchases/${id}/receive`, {});
+        showToast('Goods inwarded! Stock counters and batch tracker updated.', 'success');
+        await loadData();
+      } catch (err) {
+        showToast(err.message || 'Inwarding failed', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

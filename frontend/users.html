@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .toolbar-container {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- Role Statistics Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-users">0</div>
+              <div class="metric-mini-lbl">Active Staff Accounts</div>
+            </div>
+            <div style="font-size: 30px;">👥</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-cashiers" style="color: var(--primary-700);">0</div>
+              <div class="metric-mini-lbl">POS Cashiers</div>
+            </div>
+            <div style="font-size: 30px;">🛒</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-managers" style="color: var(--accent-blue);">0</div>
+              <div class="metric-mini-lbl">Store Managers</div>
+            </div>
+            <div style="font-size: 30px;">📊</div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="toolbar-container">
+          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <input 
+              type="text" 
+              id="user-search-input" 
+              class="form-control" 
+              style="max-width: 280px;" 
+              placeholder="Search staff by username, name..." 
+            />
+            <select id="user-role-filter" class="form-control" style="max-width: 180px;">
+              <option value="ALL">All Roles</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="STORE_MANAGER">STORE_MANAGER</option>
+              <option value="CASHIER">CASHIER</option>
+              <option value="INVENTORY_STAFF">INVENTORY_STAFF</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-add-user">➕ Add New Staff User</button>
+        </div>
+
+        <!-- Staff Roster Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Full Name & Username</th>
+                <th>Role</th>
+                <th>Email Address</th>
+                <th>Phone Number</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading staff roster...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT USER MODAL -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="user-modal-title">Add Staff Member</h3>
+        <button class="modal-close-btn" id="close-user-modal">&times;</button>
+      </div>
+      <form id="user-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <input type="hidden" id="user-id" />
+
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="user-fullname" class="form-control" required placeholder="e.g. Ramesh Kumar" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Username *</label>
+              <input type="text" id="user-username" class="form-control" required placeholder="ramesh1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role *</label>
+              <select id="user-role" class="form-control" required>
+                <option value="CASHIER">CASHIER (POS Checkout)</option>
+                <option value="STORE_MANAGER">STORE_MANAGER (Inventory & PO)</option>
+                <option value="INVENTORY_STAFF">INVENTORY_STAFF (Stock Receiving)</option>
+                <option value="ADMIN">ADMIN (Full Access)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" id="user-email" class="form-control" required placeholder="staff@grocery.local" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="text" id="user-phone" class="form-control" placeholder="9876543210" />
+            </div>
+          </div>
+
+          <div class="form-group" id="pwd-field-group">
+            <label class="form-label">Initial Password *</label>
+            <input type="password" id="user-password" class="form-control" placeholder="Minimum 6 characters" />
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-user">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-user">Save Staff User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'users', title: 'User Management & Permissions' });
+
+    let users = [];
+    const tableBody = document.getElementById('users-table-body');
+    const searchInput = document.getElementById('user-search-input');
+    const roleFilter = document.getElementById('user-role-filter');
+    const userModal = document.getElementById('user-modal');
+    const userForm = document.getElementById('user-form');
+
+    async function loadUsers() {
+      try {
+        const res = await Api.get('/users').catch(() => []);
+        users = Array.isArray(res) ? res : (res.data || []);
+
+        updateMetrics();
+        renderTable();
+      } catch (err) {
+        showToast('Error loading staff roster: ' + err.message, 'error');
+      }
+    }
+
+    function updateMetrics() {
+      document.getElementById('metric-total-users').textContent = users.length;
+      document.getElementById('metric-cashiers').textContent = users.filter(u => u.role === 'CASHIER').length;
+      document.getElementById('metric-managers').textContent = users.filter(u => u.role === 'STORE_MANAGER' || u.role === 'ADMIN').length;
+    }
+
+    function renderTable() {
+      const q = searchInput.value.toLowerCase().trim();
+      const role = roleFilter.value;
+
+      let filtered = users.filter(u => {
+        const matchesQ = !q || 
+          (u.username && u.username.toLowerCase().includes(q)) ||
+          (u.fullName && u.fullName.toLowerCase().includes(q)) ||
+          (u.email && u.email.toLowerCase().includes(q));
+
+        const matchesRole = role === 'ALL' || u.role === role;
+        return matchesQ && matchesRole;
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-400);">No staff members found matching criteria.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = filtered.map(u => {
+        let roleBadge = `<span class="badge badge-info">STAFF</span>`;
+        if (u.role === 'ADMIN') roleBadge = `<span class="badge badge-danger">ADMIN</span>`;
+        else if (u.role === 'STORE_MANAGER') roleBadge = `<span class="badge badge-warning">MANAGER</span>`;
+        else if (u.role === 'CASHIER') roleBadge = `<span class="badge badge-success">CASHIER</span>`;
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--gray-900);">${u.fullName || u.username}</div>
+              <div style="font-size: 11px; font-family: monospace; color: var(--gray-500);">@${u.username}</div>
+            </td>
+            <td>${roleBadge}</td>
+            <td style="color: var(--gray-600);">${u.email || '-'}</td>
+            <td>${u.phone || '-'}</td>
+            <td><span class="badge ${u.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}">${u.status || 'ACTIVE'}</span></td>
+            <td style="font-size: 12px; color: var(--gray-500);">${u.createdAt ? u.createdAt.slice(0, 10) : '-'}</td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-reset-pwd" data-id="${u.id}" data-name="${u.username}" style="padding: 4px 8px; font-size: 11px;" title="Reset Password">🔑</button>
+              <button class="btn btn-secondary btn-del-user" data-id="${u.id}" style="padding: 4px 8px; font-size: 11px; color: var(--accent-rose);" title="Delete User">🗑️</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tableBody.querySelectorAll('.btn-reset-pwd').forEach(b => {
+        b.addEventListener('click', () => resetPassword(b.dataset.id, b.dataset.name));
+      });
+      tableBody.querySelectorAll('.btn-del-user').forEach(b => {
+        b.addEventListener('click', () => deleteUser(b.dataset.id));
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+    roleFilter.addEventListener('change', renderTable);
+
+    document.getElementById('btn-add-user').addEventListener('click', () => {
+      document.getElementById('user-modal-title').textContent = 'Add Staff Member';
+      userForm.reset();
+      document.getElementById('user-id').value = '';
+      document.getElementById('pwd-field-group').style.display = 'block';
+      userModal.classList.add('active');
+      document.getElementById('user-fullname').focus();
+    });
+
+    document.getElementById('close-user-modal').addEventListener('click', () => userModal.classList.remove('active'));
+    document.getElementById('btn-cancel-user').addEventListener('click', () => userModal.classList.remove('active'));
+
+    userForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        fullName: document.getElementById('user-fullname').value.trim(),
+        username: document.getElementById('user-username').value.trim(),
+        email: document.getElementById('user-email').value.trim(),
+        phone: document.getElementById('user-phone').value.trim(),
+        role: document.getElementById('user-role').value,
+        password: document.getElementById('user-password').value || 'staff123'
+      };
+
+      try {
+        const btn = document.getElementById('btn-save-user');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        await Api.post('/users', payload);
+        showToast('Staff account created successfully', 'success');
+
+        userModal.classList.remove('active');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Failed to create user', 'error');
+      } finally {
+        const btn = document.getElementById('btn-save-user');
+        btn.disabled = false;
+        btn.textContent = 'Save Staff User';
+      }
+    });
+
+    async function resetPassword(id, username) {
+      const newPwd = prompt(`Enter new password for @${username}:`, 'password123');
+      if (!newPwd) return;
+
+      try {
+        await Api.post(`/users/${id}/reset-password`, { password: newPwd });
+        showToast(`Password updated for @${username}`, 'success');
+      } catch (err) {
+        showToast('Password reset failed', 'error');
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to remove this staff account?')) return;
+      try {
+        await Api.delete(`/users/${id}`);
+        showToast('User removed', 'success');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete user', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

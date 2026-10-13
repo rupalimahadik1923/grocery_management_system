@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Analytics | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin: 4px 0;
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .metric-mini-sub {
+      font-size: 11px;
+      color: var(--primary-700);
+      font-weight: 600;
+    }
+    .pnl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .report-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .export-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- P&L Financial Cards Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div class="metric-mini-lbl">Gross Revenue</div>
+            <div class="metric-mini-val" id="pnl-revenue" style="color: var(--primary-700);">₹0.00</div>
+            <div class="metric-mini-sub">Total sales turnover</div>
+          </div>
+          <div class="metric-mini-card">
+            <div class="metric-mini-lbl">Cost of Goods (COGS)</div>
+            <div class="metric-mini-val" id="pnl-cogs" style="color: var(--gray-700);">₹0.00</div>
+            <div class="metric-mini-sub">~70% grocery inventory cost</div>
+          </div>
+          <div class="metric-mini-card">
+            <div class="metric-mini-lbl">Gross Profit</div>
+            <div class="metric-mini-val" id="pnl-gross-profit" style="color: var(--primary-600);">₹0.00</div>
+            <div class="metric-mini-sub" id="pnl-gross-margin">Margin: 0%</div>
+          </div>
+          <div class="metric-mini-card">
+            <div class="metric-mini-lbl">Operating Expenses</div>
+            <div class="metric-mini-val" id="pnl-expenses" style="color: var(--accent-rose);">₹0.00</div>
+            <div class="metric-mini-sub">Rent, utilities & salaries</div>
+          </div>
+          <div class="metric-mini-card">
+            <div class="metric-mini-lbl">Net Profit</div>
+            <div class="metric-mini-val" id="pnl-net-profit" style="color: var(--primary-800); font-size: 26px;">₹0.00</div>
+            <div class="metric-mini-sub" id="pnl-net-margin">Net Margin: 0%</div>
+          </div>
+        </div>
+
+        <!-- Visual Analytics & Category Breakdown -->
+        <div class="pnl-grid">
+          <!-- Sales Breakdown Card -->
+          <div class="report-card">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px;">
+              📊 Sales Turnover Summary
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span>Total Orders Completed:</span>
+                <strong id="rep-total-orders">0 orders</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span>Average Order Value (AOV):</span>
+                <strong id="rep-aov">₹0.00</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span>Discounts Given:</span>
+                <strong style="color: var(--accent-rose);" id="rep-total-discount">₹0.00</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span>GST Tax Collected (CGST + SGST):</span>
+                <strong style="color: var(--primary-700);" id="rep-total-tax">₹0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Selling Products Leaderboard -->
+          <div class="report-card">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px;">
+              🏆 Top Selling Products
+            </h3>
+            <div id="top-products-list" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="color: var(--gray-400); text-align: center; padding: 20px;">
+                Loading top items...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Reports Hub -->
+        <div class="report-card">
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">
+            📥 Direct Export & Download Hub
+          </h3>
+          <p style="font-size: 13px; color: var(--gray-500); margin-bottom: 16px;">
+            Export standard CSV spreadsheets for accounting, audit submissions, and college project evaluation.
+          </p>
+
+          <div class="export-grid">
+            <div class="export-card">
+              <div>
+                <div style="font-weight: 700;">📦 Product Master Report</div>
+                <div style="font-size: 11px; color: var(--gray-500);">All SKUs, costs, prices, stock</div>
+              </div>
+              <a href="http://localhost:8080/api/v1/reports/export/products" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+            </div>
+
+            <div class="export-card">
+              <div>
+                <div style="font-weight: 700;">🧾 Sales Transactions Ledger</div>
+                <div style="font-size: 11px; color: var(--gray-500);">Line-by-line checkout logs</div>
+              </div>
+              <a href="http://localhost:8080/api/v1/reports/export/sales" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+            </div>
+
+            <div class="export-card">
+              <div>
+                <div style="font-weight: 700;">💰 Operating Expenses Ledger</div>
+                <div style="font-size: 11px; color: var(--gray-500);">All cost receipts and vouchers</div>
+              </div>
+              <a href="http://localhost:8080/api/v1/reports/export/expenses" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'reports', title: 'Reports & Analytics' });
+
+    async function loadReports() {
+      try {
+        const [pnl, salesData, prodsRes] = await Promise.all([
+          Api.get('/reports/profit-loss').catch(() => ({})),
+          Api.get('/reports/sales').catch(() => ({})),
+          Api.get('/products').catch(() => [])
+        ]);
+
+        // PnL Metrics
+        const rev = pnl.revenue || 0;
+        const cogs = pnl.cogs || 0;
+        const gp = pnl.grossProfit || 0;
+        const gm = pnl.grossMarginPercent || 0;
+        const exp = pnl.expenses || 0;
+        const np = pnl.netProfit || 0;
+        const nm = pnl.netMarginPercent || 0;
+
+        document.getElementById('pnl-revenue').textContent = `₹${rev.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('pnl-cogs').textContent = `₹${cogs.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('pnl-gross-profit').textContent = `₹${gp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('pnl-gross-margin').textContent = `Margin: ${gm.toFixed(1)}%`;
+        document.getElementById('pnl-expenses').textContent = `₹${exp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('pnl-net-profit').textContent = `₹${np.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('pnl-net-margin').textContent = `Net Margin: ${nm.toFixed(1)}%`;
+
+        // Sales Summary
+        const totalOrders = salesData.totalOrders || 0;
+        const aov = totalOrders > 0 ? (rev / totalOrders) : 0;
+        document.getElementById('rep-total-orders').textContent = `${totalOrders} orders`;
+        document.getElementById('rep-aov').textContent = `₹${aov.toFixed(2)}`;
+        document.getElementById('rep-total-discount').textContent = `₹${(salesData.totalDiscount || 0).toFixed(2)}`;
+        document.getElementById('rep-total-tax').textContent = `₹${(salesData.totalTax || 0).toFixed(2)}`;
+
+        // Top Selling items calculation from sales
+        renderTopProducts(salesData.sales || [], prodsRes);
+
+      } catch (err) {
+        showToast('Error loading financial reports: ' + err.message, 'error');
+      }
+    }
+
+    function renderTopProducts(salesList, catalogProducts) {
+      const counts = {};
+      salesList.forEach(sale => {
+        (sale.items || []).forEach(item => {
+          counts[item.productName] = (counts[item.productName] || 0) + item.quantity;
+        });
+      });
+
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const container = document.getElementById('top-products-list');
+
+      if (sorted.length === 0) {
+        container.innerHTML = `
+          <div style="color: var(--gray-400); text-align: center; padding: 20px;">
+            No checkout transactions recorded yet. Completed POS sales will appear here.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = sorted.map(([name, qty], idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--gray-50); border-radius: var(--radius-md);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-weight: 800; color: var(--primary-700); width: 24px;">#${idx + 1}</div>
+            <div style="font-weight: 600; color: var(--gray-900);">${name}</div>
+          </div>
+          <span class="badge badge-success">${qty} units sold</span>
+        </div>
+      `).join('');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

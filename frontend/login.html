@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Grocery Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      padding: 20px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-xl);
+    }
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-icon {
+      font-size: 44px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+      letter-spacing: -0.5px;
+    }
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+    .demo-roles-box {
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+    }
+    .demo-roles-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .role-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .role-pill-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .role-pill-btn:hover {
+      background: var(--primary-50);
+      border-color: var(--primary-500);
+      color: var(--primary-800);
+    }
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="brand-header">
+      <div class="brand-icon">🌿</div>
+      <h1 class="brand-title">FreshGrocery POS</h1>
+      <p class="brand-subtitle">Enterprise Grocery & Inventory Management</p>
+    </div>
+
+    <div id="error-box" class="alert-error"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" class="form-control" placeholder="Enter username" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 12px;" id="login-submit-btn">
+        Sign In
+      </button>
+    </form>
+
+    <div class="demo-roles-box">
+      <div class="demo-roles-title">⚡ Quick Demo Accounts</div>
+      <div class="role-pills">
+        <button type="button" class="role-pill-btn" onclick="fillDemo('admin', 'admin123')">👑 Admin</button>
+        <button type="button" class="role-pill-btn" onclick="fillDemo('manager', 'manager123')">📊 Manager</button>
+        <button type="button" class="role-pill-btn" onclick="fillDemo('cashier', 'cashier123')">🛒 Cashier</button>
+        <button type="button" class="role-pill-btn" onclick="fillDemo('inventory', 'inventory123')">📋 Inventory</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Auth } from './js/auth.js';
+
+    // If already authenticated, redirect to dashboard or POS
+    if (Auth.isAuthenticated()) {
+      const user = Auth.getUser();
+      window.location.href = user && user.role === 'CASHIER' ? 'pos.html' : 'dashboard.html';
+    }
+
+    window.fillDemo = (username, password) => {
+      document.getElementById('username').value = username;
+      document.getElementById('password').value = password;
+    };
+
+    const form = document.getElementById('login-form');
+    const errorBox = document.getElementById('error-box');
+    const submitBtn = document.getElementById('login-submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating...';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const user = await Auth.login(username, password);
+        window.location.href = user.role === 'CASHIER' ? 'pos.html' : 'dashboard.html';
+      } catch (err) {
+        errorBox.textContent = err.message || 'Login failed. Please check your credentials.';
+        errorBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

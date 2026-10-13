@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Grocery Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar dynamically injected by layout.js -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <!-- Topbar dynamically injected by layout.js -->
+      <div id="topbar-container"></div>
+
+      <main class="content-body">
+        <!-- Quick Action Bar -->
+        <div class="quick-actions-bar">
+          <a href="pos.html" class="btn btn-primary">🛒 Launch POS Checkout</a>
+          <a href="products.html" class="btn btn-secondary">📦 New Product</a>
+          <a href="purchases.html" class="btn btn-secondary">🚚 Inward Purchase</a>
+          <a href="reports.html" class="btn btn-secondary">📈 Sales Analytics</a>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Today's Sales</span>
+              <span class="metric-value" id="kpi-today-sales">₹0.00</span>
+              <span class="metric-trend up">Live POS revenue</span>
+            </div>
+            <div class="metric-icon-box green">💰</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Active Products</span>
+              <span class="metric-value" id="kpi-total-products">0</span>
+              <span class="metric-trend up">Across categories</span>
+            </div>
+            <div class="metric-icon-box blue">📦</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Low Stock Items</span>
+              <span class="metric-value" id="kpi-low-stock">0</span>
+              <span class="metric-trend down">Below reorder level</span>
+            </div>
+            <div class="metric-icon-box amber">⚠️</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Expiring Soon (30d)</span>
+              <span class="metric-value" id="kpi-expiring">0</span>
+              <span class="metric-trend down">Batches near expiry</span>
+            </div>
+            <div class="metric-icon-box rose">⏳</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Two-Column Grid -->
+        <div class="dashboard-grid">
+          <!-- Recent Sales Activity -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900);">Recent Sales Receipts</h2>
+              <a href="sales.html" style="font-size: 13px; font-weight: 600;">View All &rarr;</a>
+            </div>
+            <div class="table-container">
+              <table class="table" id="recent-sales-table">
+                <thead>
+                  <tr>
+                    <th>Receipt #</th>
+                    <th>Time</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-sales-tbody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">
+                      No sales recorded today yet.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Stock & Expiry Quick Watch -->
+          <div class="card">
+            <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px;">
+              Attention Needed
+            </h2>
+            <div id="alerts-list" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="padding: 12px; background: var(--primary-50); border-radius: var(--radius-md); border: 1px solid var(--primary-200); font-size: 13px; color: var(--primary-900);">
+                ✨ <strong>System Initialized</strong><br>
+                Baseline connected to MongoDB. Ready for transactions.
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'dashboard', title: 'Store Dashboard' });
+
+    async function loadDashboardData() {
+      try {
+        const stats = await Api.get('/reports/dashboard');
+        if (stats) {
+          document.getElementById('kpi-today-sales').textContent = `₹${(stats.todaySales || 0).toFixed(2)}`;
+          document.getElementById('kpi-total-products').textContent = stats.totalProducts || 0;
+          document.getElementById('kpi-low-stock').textContent = stats.lowStockCount || 0;
+          document.getElementById('kpi-expiring').textContent = stats.expiringCount || 0;
+        }
+      } catch (err) {
+        // Fallback for initial unseeded state
+        console.log('Dashboard initial load state:', err.message);
+      }
+    }
+
+    loadDashboardData();
+  </script>
+</body>
+</html>

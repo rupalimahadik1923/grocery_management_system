@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Returns & Refunds | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .lookup-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .return-item-row {
+      display: grid;
+      grid-template-columns: 40px 2fr 1fr 1fr 1.5fr 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- STEP 1: Receipt Lookup Card -->
+        <div class="lookup-card">
+          <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
+            🔍 Step 1: Customer Receipt Lookup
+          </h2>
+          <p style="font-size: 13px; color: var(--gray-500); margin-bottom: 16px;">
+            Enter the original POS receipt number printed on the customer's thermal bill to verify purchased items and eligibility.
+          </p>
+          <div style="display: flex; gap: 12px; max-width: 500px;">
+            <input 
+              type="text" 
+              id="return-receipt-input" 
+              class="form-control" 
+              placeholder="Enter receipt number (e.g. RCP-2024-12345)..." 
+              autofocus 
+            />
+            <button class="btn btn-primary" id="btn-lookup-receipt">Lookup Receipt</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Return Items Processing Panel (Hidden until found) -->
+        <div id="return-process-panel" class="lookup-card" style="display: none; border-color: var(--primary-300);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900);">
+                🔄 Step 2: Select Items for Return & Refund
+              </h2>
+              <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;" id="order-meta-info"></div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 12px; color: var(--gray-500);">Refund Total:</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--accent-rose);" id="refund-total-display">₹0.00</div>
+            </div>
+          </div>
+
+          <!-- Items Selection Header -->
+          <div style="font-size: 12px; font-weight: 700; color: var(--gray-600); margin-bottom: 8px; display: grid; grid-template-columns: 40px 2fr 1fr 1fr 1.5fr 1fr; gap: 12px; padding: 0 12px;">
+            <span>Select</span>
+            <span>Product</span>
+            <span>Bought Qty</span>
+            <span>Return Qty</span>
+            <span>Return Reason</span>
+            <span>Restock Stock?</span>
+          </div>
+
+          <div id="return-items-list">
+            <!-- Injected dynamically -->
+          </div>
+
+          <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--gray-200); padding-top: 16px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <label class="form-label" style="margin: 0;">Refund Payment Mode:</label>
+              <select id="refund-mode" class="form-control" style="width: 160px;">
+                <option value="CASH">Cash Refund</option>
+                <option value="UPI">UPI Refund</option>
+                <option value="STORE_CREDIT">Store Credit</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-process-refund" style="background: var(--accent-rose); border-color: var(--accent-rose);">
+              💸 Process Return & Issue Refund
+            </button>
+          </div>
+        </div>
+
+        <!-- Returns History Log -->
+        <div class="table-container" style="margin-top: 24px;">
+          <div style="padding: 16px 20px; border-bottom: 1px solid var(--gray-200); font-weight: 700; font-size: 15px; color: var(--gray-900);">
+            Past Returns & Credit Notes
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Return #</th>
+                <th>Receipt #</th>
+                <th>Date & Time</th>
+                <th>Processed By</th>
+                <th>Refund Amount</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="returns-history-body">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading returns ledger...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'returns', title: 'Customer Returns & Restocking' });
+
+    let currentSale = null;
+    let returnsHistory = [];
+
+    const receiptInput = document.getElementById('return-receipt-input');
+    const processPanel = document.getElementById('return-process-panel');
+    const itemsList = document.getElementById('return-items-list');
+    const orderMeta = document.getElementById('order-meta-info');
+    const refundTotalEl = document.getElementById('refund-total-display');
+    const historyBody = document.getElementById('returns-history-body');
+
+    async function loadReturnsHistory() {
+      try {
+        const res = await Api.get('/returns').catch(() => []);
+        returnsHistory = Array.isArray(res) ? res : (res.data || []);
+        renderHistory();
+      } catch (err) {
+        showToast('Error loading returns log', 'error');
+      }
+    }
+
+    function renderHistory() {
+      if (returnsHistory.length === 0) {
+        historyBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-400);">No customer returns recorded yet.</td></tr>`;
+        return;
+      }
+
+      historyBody.innerHTML = returnsHistory.map(r => `
+        <tr>
+          <td style="font-family: monospace; font-weight: 700; color: var(--accent-rose);">${r.returnNumber}</td>
+          <td style="font-family: monospace;">${r.receiptNumber}</td>
+          <td style="font-size: 12px; color: var(--gray-600);">${r.createdAt ? r.createdAt.replace('T', ' ').slice(0, 19) : '-'}</td>
+          <td>${r.processedBy || 'Staff'}</td>
+          <td style="font-weight: 700; color: var(--accent-rose);">₹${r.totalRefundAmount?.toFixed(2) || '0.00'}</td>
+          <td style="font-size: 12px;">${r.reason || 'Customer Return'}</td>
+          <td><span class="badge badge-success">COMPLETED</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Receipt Lookup
+    document.getElementById('btn-lookup-receipt').addEventListener('click', lookupReceipt);
+    receiptInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') lookupReceipt();
+    });
+
+    async function lookupReceipt() {
+      const num = receiptInput.value.trim();
+      if (!num) return;
+
+      try {
+        const res = await Api.get(`/sales/receipt/${num}`);
+        if (!res || !res.id) {
+          showToast('No sale found with receipt number: ' + num, 'error');
+          return;
+        }
+
+        currentSale = res;
+        orderMeta.textContent = `Receipt: ${res.receiptNumber} | Date: ${res.createdAt?.slice(0,10)} | Customer: ${res.customerName || 'Walk-in'} | Total: ₹${res.grandTotal?.toFixed(2)}`;
+        renderReturnItems(res.items || []);
+        processPanel.style.display = 'block';
+        showToast('Receipt verified successfully', 'success');
+      } catch (err) {
+        showToast('Receipt not found: ' + num, 'error');
+        processPanel.style.display = 'none';
+      }
+    }
+
+    function renderReturnItems(items) {
+      if (items.length === 0) {
+        itemsList.innerHTML = `<div style="text-align: center; padding: 20px;">No items on this receipt.</div>`;
+        return;
+      }
+
+      itemsList.innerHTML = items.map((item, idx) => `
+        <div class="return-item-row" data-idx="${idx}">
+          <input type="checkbox" class="return-chk" data-idx="${idx}" />
+          <div>
+            <div style="font-weight: 600; color: var(--gray-900);">${item.productName}</div>
+            <div style="font-size: 11px; color: var(--gray-500);">₹${item.unitPrice?.toFixed(2)} / unit</div>
+          </div>
+          <div>${item.quantity} units</div>
+          <div>
+            <input type="number" min="1" max="${item.quantity}" value="1" class="form-control return-qty" style="width: 70px; padding: 4px;" disabled />
+          </div>
+          <div>
+            <select class="form-control return-reason" disabled>
+              <option value="Damaged / Defective">Damaged / Defective</option>
+              <option value="Expired Product">Expired Product</option>
+              <option value="Wrong Item Bought">Wrong Item Bought</option>
+              <option value="Customer Return">Customer Return</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; display: flex; align-items: center; gap: 4px;">
+              <input type="checkbox" class="return-restock" checked disabled /> Yes (+Stock)
+            </label>
+          </div>
+        </div>
+      `).join('');
+
+      itemsList.querySelectorAll('.return-chk').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const row = e.target.closest('.return-item-row');
+          const isChecked = e.target.checked;
+          row.querySelector('.return-qty').disabled = !isChecked;
+          row.querySelector('.return-reason').disabled = !isChecked;
+          row.querySelector('.return-restock').disabled = !isChecked;
+          recalculateRefund();
+        });
+      });
+
+      itemsList.querySelectorAll('.return-qty').forEach(input => {
+        input.addEventListener('input', recalculateRefund);
+      });
+
+      recalculateRefund();
+    }
+
+    function recalculateRefund() {
+      let totalRefund = 0;
+      itemsList.querySelectorAll('.return-item-row').forEach(row => {
+        const chk = row.querySelector('.return-chk');
+        if (chk.checked) {
+          const idx = parseInt(row.dataset.idx);
+          const item = currentSale.items[idx];
+          const qty = parseFloat(row.querySelector('.return-qty').value) || 0;
+          totalRefund += (qty * (item.unitPrice || 0));
+        }
+      });
+      refundTotalEl.textContent = `₹${totalRefund.toFixed(2)}`;
+    }
+
+    // Process Return Submission
+    document.getElementById('btn-process-refund').addEventListener('click', async () => {
+      const selectedItems = [];
+      let totalRefund = 0;
+
+      itemsList.querySelectorAll('.return-item-row').forEach(row => {
+        const chk = row.querySelector('.return-chk');
+        if (chk.checked) {
+          const idx = parseInt(row.dataset.idx);
+          const item = currentSale.items[idx];
+          const qty = parseFloat(row.querySelector('.return-qty').value) || 1;
+          const reason = row.querySelector('.return-reason').value;
+          const restock = row.querySelector('.return-restock').checked;
+          const refundSubtotal = qty * item.unitPrice;
+
+          totalRefund += refundSubtotal;
+          selectedItems.push({
+            productId: item.productId,
+            productName: item.productName,
+            quantity: qty,
+            refundAmount: refundSubtotal,
+            reason: reason,
+            restocked: restock
+          });
+        }
+      });
+
+      if (selectedItems.length === 0) {
+        showToast('Please check at least one item to return', 'error');
+        return;
+      }
+
+      const payload = {
+        saleId: currentSale.id,
+        receiptNumber: currentSale.receiptNumber,
+        refundMode: document.getElementById('refund-mode').value,
+        totalRefundAmount: totalRefund,
+        reason: selectedItems.map(i => i.reason).join('; '),
+        items: selectedItems
+      };
+
+      try {
+        const btn = document.getElementById('btn-process-refund');
+        btn.disabled = true;
+        btn.textContent = 'Processing Refund...';
+
+        await Api.post('/returns', payload);
+        showToast('Return recorded successfully and refund approved!', 'success');
+
+        processPanel.style.display = 'none';
+        receiptInput.value = '';
+        currentSale = null;
+
+        await loadReturnsHistory();
+      } catch (err) {
+        showToast(err.message || 'Failed to process return', 'error');
+      } finally {
+        const btn = document.getElementById('btn-process-refund');
+        btn.disabled = false;
+        btn.textContent = '💸 Process Return & Issue Refund';
+      }
+    });
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadReturnsHistory();
+  </script>
+</body>
+</html>

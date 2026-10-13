@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FreshGrocery POS & Inventory System</title>
+  <script type="module">
+    import { Auth } from './js/auth.js';
+    if (!Auth.isAuthenticated()) {
+      window.location.href = 'login.html';
+    } else {
+      const user = Auth.getUser();
+      window.location.href = user && user.role === 'CASHIER' ? 'pos.html' : 'dashboard.html';
+    }
+  </script>
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
+  <p>Loading FreshGrocery System...</p>
+</body>
+</html>

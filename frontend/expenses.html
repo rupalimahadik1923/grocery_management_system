@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operating Expenses | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .toolbar-container {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- Metrics Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-exp" style="color: var(--accent-rose);">₹0.00</div>
+              <div class="metric-mini-lbl">Total Operating Expenses</div>
+            </div>
+            <div style="font-size: 30px;">💸</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-rent-util">₹0.00</div>
+              <div class="metric-mini-lbl">Rent & Utilities</div>
+            </div>
+            <div style="font-size: 30px;">🏢</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-salaries">₹0.00</div>
+              <div class="metric-mini-lbl">Staff Salaries & Wages</div>
+            </div>
+            <div style="font-size: 30px;">💼</div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="toolbar-container">
+          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <input 
+              type="text" 
+              id="exp-search-input" 
+              class="form-control" 
+              style="max-width: 280px;" 
+              placeholder="Search description or voucher..." 
+            />
+            <select id="exp-cat-filter" class="form-control" style="max-width: 180px;">
+              <option value="ALL">All Categories</option>
+              <option value="Rent">Rent</option>
+              <option value="Electricity">Electricity & Water</option>
+              <option value="Salaries">Staff Salaries</option>
+              <option value="Packaging">Packaging Bags</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Spoilage">Spoilage / Wastage</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-add-expense">➕ Record New Expense</button>
+        </div>
+
+        <!-- Expenses Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Title / Description</th>
+                <th>Category</th>
+                <th>Amount (₹)</th>
+                <th>Paid Via</th>
+                <th>Voucher #</th>
+                <th>Recorded By</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading operating expenses...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- RECORD EXPENSE MODAL -->
+  <div class="modal-overlay" id="expense-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Operating Expense</h3>
+        <button class="modal-close-btn" id="close-exp-modal">&times;</button>
+      </div>
+      <form id="expense-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <div class="form-group">
+            <label class="form-label">Expense Description / Title *</label>
+            <input type="text" id="exp-title" class="form-control" required placeholder="e.g. September Electricity Bill" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="exp-category" class="form-control" required>
+                <option value="Rent">Rent</option>
+                <option value="Electricity">Electricity & Water</option>
+                <option value="Salaries">Staff Salaries</option>
+                <option value="Packaging">Packaging Materials</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Spoilage">Spoilage / Loss</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amount (₹) *</label>
+              <input type="number" step="0.01" id="exp-amount" class="form-control" required placeholder="0.00" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select id="exp-method" class="form-control">
+                <option value="Register Cash">Register Cash</option>
+                <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                <option value="UPI">UPI Payment</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Expense Date</label>
+              <input type="date" id="exp-date" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Voucher / Receipt Reference #</label>
+            <input type="text" id="exp-voucher" class="form-control" placeholder="e.g. VCH-2024-001" />
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-exp">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-exp">Record Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'expenses', title: 'Operating Expenses' });
+
+    let expenses = [];
+    const tableBody = document.getElementById('expenses-table-body');
+    const searchInput = document.getElementById('exp-search-input');
+    const catFilter = document.getElementById('exp-cat-filter');
+    const expModal = document.getElementById('expense-modal');
+    const expForm = document.getElementById('expense-form');
+
+    async function loadExpenses() {
+      try {
+        const res = await Api.get('/expenses').catch(() => []);
+        expenses = Array.isArray(res) ? res : (res.data || []);
+
+        updateMetrics();
+        renderTable();
+      } catch (err) {
+        showToast('Error loading expenses: ' + err.message, 'error');
+      }
+    }
+
+    function updateMetrics() {
+      const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const rentUtil = expenses.filter(e => e.category === 'Rent' || e.category === 'Electricity').reduce((sum, e) => sum + (e.amount || 0), 0);
+      const salaries = expenses.filter(e => e.category === 'Salaries').reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      document.getElementById('metric-total-exp').textContent = `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+      document.getElementById('metric-rent-util').textContent = `₹${rentUtil.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+      document.getElementById('metric-salaries').textContent = `₹${salaries.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    }
+
+    function renderTable() {
+      const q = searchInput.value.toLowerCase().trim();
+      const cat = catFilter.value;
+
+      let filtered = expenses.filter(e => {
+        const matchesQ = !q || 
+          (e.title && e.title.toLowerCase().includes(q)) ||
+          (e.voucherRef && e.voucherRef.toLowerCase().includes(q));
+
+        const matchesCat = cat === 'ALL' || e.category === cat;
+        return matchesQ && matchesCat;
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+              No operating expenses found. Click "Record New Expense" to log costs.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = filtered.map(e => `
+        <tr>
+          <td style="font-size: 12px; color: var(--gray-600);">${e.expenseDate || '-'}</td>
+          <td style="font-weight: 600; color: var(--gray-900);">${e.title}</td>
+          <td><span class="badge badge-neutral">${e.category}</span></td>
+          <td style="font-weight: 700; color: var(--accent-rose);">₹${e.amount?.toFixed(2)}</td>
+          <td>${e.paymentMethod || 'Register Cash'}</td>
+          <td style="font-family: monospace; font-size: 11px;">${e.voucherRef || '-'}</td>
+          <td>${e.recordedBy || 'Staff'}</td>
+          <td style="text-align: right;">
+            <button class="btn btn-secondary btn-del-exp" data-id="${e.id}" style="padding: 4px 8px; font-size: 12px; color: var(--accent-rose);">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+
+      tableBody.querySelectorAll('.btn-del-exp').forEach(b => {
+        b.addEventListener('click', () => deleteExpense(b.dataset.id));
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+    catFilter.addEventListener('change', renderTable);
+
+    document.getElementById('btn-add-expense').addEventListener('click', () => {
+      expForm.reset();
+      document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
+      expModal.classList.add('active');
+      document.getElementById('exp-title').focus();
+    });
+
+    document.getElementById('close-exp-modal').addEventListener('click', () => expModal.classList.remove('active'));
+    document.getElementById('btn-cancel-exp').addEventListener('click', () => expModal.classList.remove('active'));
+
+    expForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('exp-title').value.trim(),
+        category: document.getElementById('exp-category').value,
+        amount: parseFloat(document.getElementById('exp-amount').value) || 0,
+        paymentMethod: document.getElementById('exp-method').value,
+        expenseDate: document.getElementById('exp-date').value,
+        voucherRef: document.getElementById('exp-voucher').value.trim()
+      };
+
+      try {
+        const btn = document.getElementById('btn-save-exp');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        await Api.post('/expenses', payload);
+        showToast('Expense recorded successfully', 'success');
+
+        expModal.classList.remove('active');
+        await loadExpenses();
+      } catch (err) {
+        showToast(err.message || 'Failed to record expense', 'error');
+      } finally {
+        const btn = document.getElementById('btn-save-exp');
+        btn.disabled = false;
+        btn.textContent = 'Record Expense';
+      }
+    });
+
+    async function deleteExpense(id) {
+      if (!confirm('Delete this expense record?')) return;
+      try {
+        await Api.delete(`/expenses/${id}`);
+        showToast('Expense removed', 'success');
+        await loadExpenses();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete expense', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadExpenses();
+  </script>
+</body>
+</html>

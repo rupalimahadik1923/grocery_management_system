@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suppliers | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .toolbar-container {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- Metrics Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-suppliers">0</div>
+              <div class="metric-mini-lbl">Active Supply Vendors</div>
+            </div>
+            <div style="font-size: 30px;">🏢</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-active-suppliers" style="color: var(--primary-700);">0</div>
+              <div class="metric-mini-lbl">Verified GST Suppliers</div>
+            </div>
+            <div style="font-size: 30px;">✅</div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="toolbar-container">
+          <input 
+            type="text" 
+            id="supplier-search-input" 
+            class="form-control" 
+            style="max-width: 320px;" 
+            placeholder="Search vendor name, contact, phone, or GST..." 
+          />
+          <button class="btn btn-primary" id="btn-add-supplier">➕ Add New Supplier</button>
+        </div>
+
+        <!-- Suppliers Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Code & Company Name</th>
+                <th>Contact Person</th>
+                <th>Phone / Email</th>
+                <th>GSTIN / Tax ID</th>
+                <th>Payment Terms</th>
+                <th>Address</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="suppliers-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading supplier directory...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT SUPPLIER MODAL -->
+  <div class="modal-overlay" id="supplier-modal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="sup-modal-title">Add New Supplier</h3>
+        <button class="modal-close-btn" id="close-sup-modal">&times;</button>
+      </div>
+      <form id="supplier-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <input type="hidden" id="sup-id" />
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label">Company / Supplier Name *</label>
+              <input type="text" id="sup-name" class="form-control" required placeholder="e.g. Amul Fresh Distributors" />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Vendor Code</label>
+              <input type="text" id="sup-code" class="form-control" placeholder="SUP-01" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact Person Name</label>
+              <input type="text" id="sup-contact" class="form-control" placeholder="e.g. Rajesh Kumar" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input type="text" id="sup-phone" class="form-control" required placeholder="9876543210" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="sup-email" class="form-control" placeholder="vendor@amul.local" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">GSTIN / Tax ID</label>
+              <input type="text" id="sup-gstin" class="form-control" placeholder="29ABCDE1234F1Z5" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Payment Terms</label>
+              <select id="sup-terms" class="form-control">
+                <option value="Net 15">Net 15 Days</option>
+                <option value="Net 30">Net 30 Days</option>
+                <option value="COD">Cash on Delivery (COD)</option>
+                <option value="Advance">Advance Payment</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select id="sup-status" class="form-control">
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="ON_HOLD">ON HOLD</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Warehouse / City Address</label>
+            <textarea id="sup-address" class="form-control" rows="2" placeholder="Warehouse address, City, PIN..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-sup">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-sup">Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'suppliers', title: 'Supplier Directory' });
+
+    let suppliers = [];
+    const tableBody = document.getElementById('suppliers-table-body');
+    const searchInput = document.getElementById('supplier-search-input');
+    const supModal = document.getElementById('supplier-modal');
+    const supForm = document.getElementById('supplier-form');
+
+    async function loadSuppliers() {
+      try {
+        const res = await Api.get('/suppliers').catch(() => []);
+        suppliers = Array.isArray(res) ? res : (res.data || []);
+
+        document.getElementById('metric-total-suppliers').textContent = suppliers.length;
+        document.getElementById('metric-active-suppliers').textContent = suppliers.filter(s => s.status === 'ACTIVE' || !s.status).length;
+
+        renderTable();
+      } catch (err) {
+        showToast('Error loading suppliers: ' + err.message, 'error');
+      }
+    }
+
+    function renderTable() {
+      const q = searchInput.value.toLowerCase().trim();
+      const filtered = suppliers.filter(s => 
+        !q || 
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.contactPerson && s.contactPerson.toLowerCase().includes(q)) ||
+        (s.phone && s.phone.includes(q)) ||
+        (s.gstin && s.gstin.toLowerCase().includes(q))
+      );
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
+              No suppliers found. Click "Add New Supplier" to create one.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = filtered.map(s => `
+        <tr>
+          <td>
+            <div style="font-weight: 700; color: var(--gray-900);">${s.name}</div>
+            <div style="font-size: 11px; font-family: monospace; color: var(--gray-500);">${s.code || '-'}</div>
+          </td>
+          <td>${s.contactPerson || '-'}</td>
+          <td>
+            <div>${s.phone || '-'}</div>
+            ${s.email ? `<div style="font-size: 11px; color: var(--gray-500);">${s.email}</div>` : ''}
+          </td>
+          <td style="font-family: monospace; font-size: 12px;">${s.gstin || '-'}</td>
+          <td><span class="badge badge-neutral">${s.paymentTerms || 'Net 30'}</span></td>
+          <td style="font-size: 12px; color: var(--gray-600);">${s.address || '-'}</td>
+          <td><span class="badge ${s.status === 'ON_HOLD' ? 'badge-warning' : 'badge-success'}">${s.status || 'ACTIVE'}</span></td>
+          <td style="text-align: right;">
+            <button class="btn btn-secondary btn-edit-sup" data-id="${s.id}" style="padding: 4px 8px; font-size: 12px;">✏️</button>
+            <button class="btn btn-secondary btn-del-sup" data-id="${s.id}" style="padding: 4px 8px; font-size: 12px; color: var(--accent-rose);">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+
+      tableBody.querySelectorAll('.btn-edit-sup').forEach(b => {
+        b.addEventListener('click', () => openEditSupplier(b.dataset.id));
+      });
+      tableBody.querySelectorAll('.btn-del-sup').forEach(b => {
+        b.addEventListener('click', () => deleteSupplier(b.dataset.id));
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+
+    document.getElementById('btn-add-supplier').addEventListener('click', () => {
+      document.getElementById('sup-modal-title').textContent = 'Add New Supplier';
+      supForm.reset();
+      document.getElementById('sup-id').value = '';
+      supModal.classList.add('active');
+      document.getElementById('sup-name').focus();
+    });
+
+    document.getElementById('close-sup-modal').addEventListener('click', () => supModal.classList.remove('active'));
+    document.getElementById('btn-cancel-sup').addEventListener('click', () => supModal.classList.remove('active'));
+
+    function openEditSupplier(id) {
+      const s = suppliers.find(item => item.id === id);
+      if (!s) return;
+
+      document.getElementById('sup-modal-title').textContent = 'Edit Supplier';
+      document.getElementById('sup-id').value = s.id;
+      document.getElementById('sup-name').value = s.name;
+      document.getElementById('sup-code').value = s.code || '';
+      document.getElementById('sup-contact').value = s.contactPerson || '';
+      document.getElementById('sup-phone').value = s.phone || '';
+      document.getElementById('sup-email').value = s.email || '';
+      document.getElementById('sup-gstin').value = s.gstin || '';
+      document.getElementById('sup-terms').value = s.paymentTerms || 'Net 15';
+      document.getElementById('sup-status').value = s.status || 'ACTIVE';
+      document.getElementById('sup-address').value = s.address || '';
+
+      supModal.classList.add('active');
+    }
+
+    supForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('sup-id').value;
+      const payload = {
+        name: document.getElementById('sup-name').value.trim(),
+        code: document.getElementById('sup-code').value.trim(),
+        contactPerson: document.getElementById('sup-contact').value.trim(),
+        phone: document.getElementById('sup-phone').value.trim(),
+        email: document.getElementById('sup-email').value.trim(),
+        gstin: document.getElementById('sup-gstin').value.trim(),
+        paymentTerms: document.getElementById('sup-terms').value,
+        status: document.getElementById('sup-status').value,
+        address: document.getElementById('sup-address').value.trim()
+      };
+
+      try {
+        const btn = document.getElementById('btn-save-sup');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        if (id) {
+          await Api.put(`/suppliers/${id}`, payload);
+          showToast('Supplier updated successfully', 'success');
+        } else {
+          await Api.post('/suppliers', payload);
+          showToast('Supplier added successfully', 'success');
+        }
+
+        supModal.classList.remove('active');
+        await loadSuppliers();
+      } catch (err) {
+        showToast(err.message || 'Failed to save supplier', 'error');
+      } finally {
+        const btn = document.getElementById('btn-save-sup');
+        btn.disabled = false;
+        btn.textContent = 'Save Supplier';
+      }
+    });
+
+    async function deleteSupplier(id) {
+      if (!confirm('Are you sure you want to delete this supplier?')) return;
+      try {
+        await Api.delete(`/suppliers/${id}`);
+        showToast('Supplier deleted', 'success');
+        await loadSuppliers();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete supplier', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadSuppliers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers & Loyalty | FreshGrocery</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-mini-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-mini-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .toolbar-container {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="topbar-container"></div>
+      <main class="content-body">
+        
+        <!-- Metrics Ribbon -->
+        <div class="metrics-bar">
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-total-cust">0</div>
+              <div class="metric-mini-lbl">Registered Customers</div>
+            </div>
+            <div style="font-size: 30px;">👥</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-points-pool" style="color: var(--primary-700);">0 pts</div>
+              <div class="metric-mini-lbl">Active Loyalty Points Pool</div>
+            </div>
+            <div style="font-size: 30px;">🎁</div>
+          </div>
+          <div class="metric-mini-card">
+            <div>
+              <div class="metric-mini-val" id="metric-lifetime-spend">₹0.00</div>
+              <div class="metric-mini-lbl">Customer Lifetime Spend</div>
+            </div>
+            <div style="font-size: 30px;">💰</div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="toolbar-container">
+          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <input 
+              type="text" 
+              id="cust-search-input" 
+              class="form-control" 
+              style="max-width: 280px;" 
+              placeholder="Search by name, mobile, email..." 
+            />
+            <select id="cust-tier-filter" class="form-control" style="max-width: 160px;">
+              <option value="ALL">All Loyalty Tiers</option>
+              <option value="BRONZE">🥉 Bronze</option>
+              <option value="SILVER">🥈 Silver</option>
+              <option value="GOLD">🥇 Gold</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-add-cust">➕ Add New Customer</button>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Mobile Number</th>
+                <th>Email Address</th>
+                <th>Loyalty Tier</th>
+                <th>Points Balance</th>
+                <th>Orders Placed</th>
+                <th>Lifetime Spend (₹)</th>
+                <th>Address</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                  Loading customer records...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT CUSTOMER MODAL -->
+  <div class="modal-overlay" id="customer-modal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="cust-modal-title">Register Customer</h3>
+        <button class="modal-close-btn" id="close-cust-modal">&times;</button>
+      </div>
+      <form id="customer-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <input type="hidden" id="cust-id" />
+
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="cust-name" class="form-control" required placeholder="e.g. Rahul Sharma" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Phone Number (10 digits) *</label>
+              <input type="text" id="cust-phone" class="form-control" required placeholder="9876543210" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="cust-email" class="form-control" placeholder="customer@example.com" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Residential Area / Address</label>
+            <textarea id="cust-address" class="form-control" rows="2" placeholder="Locality, City..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-cust">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-cust">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Layout } from './js/layout.js';
+    import { Api } from './js/api.js';
+
+    Layout.init({ activePage: 'customers', title: 'Customers & Loyalty Program' });
+
+    let customers = [];
+    const tableBody = document.getElementById('customers-table-body');
+    const searchInput = document.getElementById('cust-search-input');
+    const tierFilter = document.getElementById('cust-tier-filter');
+    const custModal = document.getElementById('customer-modal');
+    const custForm = document.getElementById('customer-form');
+
+    async function loadCustomers() {
+      try {
+        const res = await Api.get('/customers').catch(() => []);
+        customers = Array.isArray(res) ? res : (res.data || []);
+
+        updateMetrics();
+        renderTable();
+      } catch (err) {
+        showToast('Error loading customers: ' + err.message, 'error');
+      }
+    }
+
+    function updateMetrics() {
+      const totalPoints = customers.reduce((sum, c) => sum + (c.loyaltyPoints || 0), 0);
+      const totalSpend = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+
+      document.getElementById('metric-total-cust').textContent = customers.length;
+      document.getElementById('metric-points-pool').textContent = `${totalPoints.toLocaleString('en-IN')} pts`;
+      document.getElementById('metric-lifetime-spend').textContent = `₹${totalSpend.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    }
+
+    function renderTable() {
+      const q = searchInput.value.toLowerCase().trim();
+      const tier = tierFilter.value;
+
+      let filtered = customers.filter(c => {
+        const matchesQ = !q || 
+          (c.name && c.name.toLowerCase().includes(q)) ||
+          (c.phone && c.phone.includes(q)) ||
+          (c.email && c.email.toLowerCase().includes(q));
+
+        const matchesTier = tier === 'ALL' || c.tier === tier;
+        return matchesQ && matchesTier;
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--gray-400);">
+              No customer records found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = filtered.map(c => {
+        let tierBadge = `<span class="badge badge-neutral">🥉 Bronze</span>`;
+        if (c.tier === 'GOLD') tierBadge = `<span class="badge badge-warning">🥇 Gold</span>`;
+        else if (c.tier === 'SILVER') tierBadge = `<span class="badge badge-info">🥈 Silver</span>`;
+
+        return `
+          <tr>
+            <td style="font-weight: 700; color: var(--gray-900);">${c.name}</td>
+            <td style="font-family: monospace; font-weight: 600;">${c.phone}</td>
+            <td style="color: var(--gray-600); font-size: 12px;">${c.email || '-'}</td>
+            <td>${tierBadge}</td>
+            <td style="font-weight: 700; color: var(--primary-700);">${c.loyaltyPoints || 0} pts</td>
+            <td>${c.ordersCount || 0}</td>
+            <td style="font-weight: 600;">₹${c.totalSpent?.toFixed(2) || '0.00'}</td>
+            <td style="font-size: 12px; color: var(--gray-600);">${c.address || '-'}</td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-edit-cust" data-id="${c.id}" style="padding: 4px 10px; font-size: 12px;">✏️ Edit</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tableBody.querySelectorAll('.btn-edit-cust').forEach(b => {
+        b.addEventListener('click', () => openEditCustomer(b.dataset.id));
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+    tierFilter.addEventListener('change', renderTable);
+
+    document.getElementById('btn-add-cust').addEventListener('click', () => {
+      document.getElementById('cust-modal-title').textContent = 'Register Customer';
+      custForm.reset();
+      document.getElementById('cust-id').value = '';
+      custModal.classList.add('active');
+      document.getElementById('cust-name').focus();
+    });
+
+    document.getElementById('close-cust-modal').addEventListener('click', () => custModal.classList.remove('active'));
+    document.getElementById('btn-cancel-cust').addEventListener('click', () => custModal.classList.remove('active'));
+
+    function openEditCustomer(id) {
+      const c = customers.find(item => item.id === id);
+      if (!c) return;
+
+      document.getElementById('cust-modal-title').textContent = 'Edit Customer';
+      document.getElementById('cust-id').value = c.id;
+      document.getElementById('cust-name').value = c.name;
+      document.getElementById('cust-phone').value = c.phone;
+      document.getElementById('cust-email').value = c.email || '';
+      document.getElementById('cust-address').value = c.address || '';
+
+      custModal.classList.add('active');
+    }
+
+    custForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('cust-id').value;
+      const payload = {
+        name: document.getElementById('cust-name').value.trim(),
+        phone: document.getElementById('cust-phone').value.trim(),
+        email: document.getElementById('cust-email').value.trim(),
+        address: document.getElementById('cust-address').value.trim()
+      };
+
+      try {
+        const btn = document.getElementById('btn-save-cust');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        if (id) {
+          await Api.put(`/customers/${id}`, payload);
+          showToast('Customer profile updated', 'success');
+        } else {
+          await Api.post('/customers', payload);
+          showToast('Customer registered successfully', 'success');
+        }
+
+        custModal.classList.remove('active');
+        await loadCustomers();
+      } catch (err) {
+        showToast(err.message || 'Failed to save customer', 'error');
+      } finally {
+        const btn = document.getElementById('btn-save-cust');
+        btn.disabled = false;
+        btn.textContent = 'Save Customer';
+      }
+    });
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    loadCustomers();
+  </script>
+</body>
+</html>
