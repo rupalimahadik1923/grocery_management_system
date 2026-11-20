@@ -12,8 +12,11 @@ public class Category {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed
     private String name;
+
+    @Indexed
+    private String storeId;
 
     private String slug;
     private String icon;
@@ -30,6 +33,17 @@ public class Category {
         this.icon = icon;
         this.description = description;
         this.displayOrder = displayOrder;
+        this.active = true;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Category(String name, String slug, String icon, String description, int displayOrder, String storeId) {
+        this.name = name;
+        this.slug = slug;
+        this.icon = icon;
+        this.description = description;
+        this.displayOrder = displayOrder;
+        this.storeId = storeId;
         this.active = true;
         this.createdAt = LocalDateTime.now();
     }
@@ -58,4 +72,7 @@ public class Category {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 }

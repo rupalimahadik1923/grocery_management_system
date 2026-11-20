@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "6acfcd316da9c130faae469d",
+    "receiptNumber": "RCP-2026-95978",
+    "items": [
+      {
+        "productId": "6ace25a7e0b01e2478d344ea",
+        "productName": "Amul Taaza Milk 500ml",
+        "sku": "SKU-MILK-01",
+        "unitPrice": 27,
+        "quantity": 2,
+        "taxRate": 0,
+        "lineTotal": 54
+      }
+    ],
+    "subtotal": 54,
+    "discountPercent": 0,
+    "discountAmount": 0,
+    "cgst": 0,
+    "sgst": 0,
+    "grandTotal": 54,
+    "paymentMethod": "CASH",
+    "tenderedAmount": 54,
+    "changeDue": 0,
+    "cashierName": "admin",
+    "customerPhone": "9876543201",
+    "customerName": "Walk-in Customer",
+    "status": "COMPLETED",
+    "createdAt": "2026-10-14T18:42:57.711Z",
+    "_class": "com.grocery.model.Sale"
+  }
+]

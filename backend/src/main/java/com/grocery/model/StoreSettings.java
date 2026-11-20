@@ -11,6 +11,8 @@ public class StoreSettings {
     @Id
     private String id = "STORE_SETTINGS_PRIMARY";
 
+    private String storeId;
+
     private String storeName = "FreshGrocery Supermarket";
     private String legalName = "FreshGrocery Retail Pvt Ltd";
     private String phone = "+91 98765 43210";
@@ -104,4 +106,7 @@ public class StoreSettings {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 }

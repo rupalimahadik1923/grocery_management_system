@@ -13,6 +13,9 @@ public class LoginResponse {
     private String email;
     private UserRole role;
     private UserStatus status;
+    private String storeId;
+    private String storeCode;
+    private String storeName;
 
     public LoginResponse() {}
 
@@ -24,6 +27,19 @@ public class LoginResponse {
         this.email = email;
         this.role = role;
         this.status = status;
+    }
+
+    public LoginResponse(String token, String id, String username, String fullName, String email, UserRole role, UserStatus status, String storeId, String storeCode, String storeName) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.fullName = fullName;
+        this.email = email;
+        this.role = role;
+        this.status = status;
+        this.storeId = storeId;
+        this.storeCode = storeCode;
+        this.storeName = storeName;
     }
 
     public String getToken() { return token; }
@@ -49,4 +65,13 @@ public class LoginResponse {
 
     public UserStatus getStatus() { return status; }
     public void setStatus(UserStatus status) { this.status = status; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
+
+    public String getStoreCode() { return storeCode; }
+    public void setStoreCode(String storeCode) { this.storeCode = storeCode; }
+
+    public String getStoreName() { return storeName; }
+    public void setStoreName(String storeName) { this.storeName = storeName; }
 }

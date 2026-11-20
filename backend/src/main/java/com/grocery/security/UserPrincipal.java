@@ -19,6 +19,8 @@ public class UserPrincipal implements UserDetails {
     private final String email;
     private final UserRole role;
     private final UserStatus status;
+    private final String storeId;
+    private final String storeCode;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(User user) {
@@ -29,6 +31,8 @@ public class UserPrincipal implements UserDetails {
         this.email = user.getEmail();
         this.role = user.getRole();
         this.status = user.getStatus();
+        this.storeId = user.getStoreId();
+        this.storeCode = user.getStoreCode();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
@@ -37,6 +41,8 @@ public class UserPrincipal implements UserDetails {
     public String getEmail() { return email; }
     public UserRole getRole() { return role; }
     public UserStatus getStatus() { return status; }
+    public String getStoreId() { return storeId; }
+    public String getStoreCode() { return storeCode; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }

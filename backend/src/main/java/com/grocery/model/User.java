@@ -30,6 +30,12 @@ public class User {
 
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Indexed
+    private String storeId;
+
+    @Indexed
+    private String storeCode;
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -45,6 +51,20 @@ public class User {
         this.email = email;
         this.phone = phone;
         this.role = role;
+        this.status = UserStatus.ACTIVE;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public User(String username, String passwordHash, String fullName, String email, String phone, UserRole role, String storeId, String storeCode) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.fullName = fullName;
+        this.email = email;
+        this.phone = phone;
+        this.role = role;
+        this.storeId = storeId;
+        this.storeCode = storeCode;
         this.status = UserStatus.ACTIVE;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -80,4 +100,10 @@ public class User {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
+
+    public String getStoreCode() { return storeCode; }
+    public void setStoreCode(String storeCode) { this.storeCode = storeCode; }
 }

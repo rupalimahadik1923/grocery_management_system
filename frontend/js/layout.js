@@ -76,8 +76,13 @@ export const Layout = {
 
     topbar.innerHTML = `
       <header class="topbar">
-        <div class="topbar-left">
+        <div class="topbar-left" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
           <h1 class="page-title">${title}</h1>
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #065f46; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🏬</span>
+            <span>${user.storeName || 'FreshGrocery Supermarket'}</span>
+            <span style="color: #059669; font-weight: 500;">(${user.storeCode || 'freshgrocery'})</span>
+          </div>
         </div>
         <div class="topbar-right">
           <a href="notifications.html" class="btn-icon" title="Notifications">

@@ -1,15 +1,14 @@
 package com.grocery.controller;
 
-import com.grocery.dto.ApiResponse;
-import com.grocery.dto.LoginRequest;
-import com.grocery.dto.LoginResponse;
-import com.grocery.dto.UserResponse;
+import com.grocery.dto.*;
 import com.grocery.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,6 +24,21 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse response = authService.authenticateUser(loginRequest);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register-store")
+    public ResponseEntity<ApiResponse<LoginResponse>> registerStore(@Valid @RequestBody StoreRegistrationRequest req) {
+        try {
+            LoginResponse response = authService.registerNewStore(req);
+            return ResponseEntity.ok(ApiResponse.success("Store and Admin account created successfully", response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/store/{storeCode}")
+    public ResponseEntity<Map<String, Object>> getStoreInfo(@PathVariable String storeCode) {
+        return ResponseEntity.ok(authService.getStorePublicInfo(storeCode));
     }
 
     @GetMapping("/me")

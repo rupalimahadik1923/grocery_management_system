@@ -39,6 +39,15 @@ export const Auth = {
   },
 
   logout() {
+    try {
+      const userStr = localStorage.getItem('grocery_user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u && u.storeCode) {
+          localStorage.setItem('freshgrocery_last_store', u.storeCode);
+        }
+      }
+    } catch (_) {}
     localStorage.removeItem('grocery_token');
     localStorage.removeItem('grocery_user');
     window.location.href = 'login.html';

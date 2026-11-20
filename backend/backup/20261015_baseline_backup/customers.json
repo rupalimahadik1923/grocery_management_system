@@ -1,0 +1,28 @@
+[
+  {
+    "_id": "6ace25a7e0b01e2478d344f5",
+    "name": "Rahul Sharma",
+    "phone": "9876501234",
+    "email": "rahul.sharma@example.com",
+    "address": "Indiranagar, Bengaluru",
+    "loyaltyPoints": 140,
+    "totalSpent": 14200,
+    "ordersCount": 8,
+    "tier": "SILVER",
+    "createdAt": "2026-10-13T12:35:51.154Z",
+    "_class": "com.grocery.model.Customer"
+  },
+  {
+    "_id": "6ace25a7e0b01e2478d344f6",
+    "name": "Priya Patel",
+    "phone": "9876505678",
+    "email": "priya.patel@example.com",
+    "address": "Koramangala, Bengaluru",
+    "loyaltyPoints": 320,
+    "totalSpent": 32500,
+    "ordersCount": 19,
+    "tier": "GOLD",
+    "createdAt": "2026-10-13T12:35:51.181Z",
+    "_class": "com.grocery.model.Customer"
+  }
+]

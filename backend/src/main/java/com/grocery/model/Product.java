@@ -1,12 +1,17 @@
 package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document(collection = "products")
+@CompoundIndexes({
+    @CompoundIndex(name = "store_sku_unique_idx", def = "{'storeId': 1, 'sku': 1}", unique = true)
+})
 public class Product {
 
     @Id
@@ -14,11 +19,14 @@ public class Product {
 
     private String name;
 
-    @Indexed(unique = true)
+    @Indexed
     private String sku;
 
     @Indexed
     private String barcode;
+
+    @Indexed
+    private String storeId;
 
     @Indexed
     private String categoryId;
@@ -103,4 +111,7 @@ public class Product {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 }

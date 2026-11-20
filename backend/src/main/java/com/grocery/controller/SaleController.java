@@ -53,36 +53,38 @@ public class SaleController {
         // Deduct inventory for each item
         if (sale.getItems() != null) {
             for (Sale.SaleItem item : sale.getItems()) {
-                Product product = productRepository.findById(item.getProductId()).orElse(null);
-                if (product != null) {
-                    double newStock = Math.max(0, product.getCurrentStock() - item.getQuantity());
-                    product.setCurrentStock(newStock);
-                    product.setUpdatedAt(LocalDateTime.now());
-                    productRepository.save(product);
+                if (item.getProductId() != null && !item.getProductId().trim().isEmpty()) {
+                    Product product = productRepository.findById(item.getProductId()).orElse(null);
+                    if (product != null) {
+                        double newStock = Math.max(0, product.getCurrentStock() - item.getQuantity());
+                        product.setCurrentStock(newStock);
+                        product.setUpdatedAt(LocalDateTime.now());
+                        productRepository.save(product);
 
-                    // Record audit ledger
-                    InventoryTransaction tx = new InventoryTransaction(
-                            product.getId(),
-                            product.getName(),
-                            "SALE",
-                            -item.getQuantity(),
-                            newStock,
-                            "POS_SALE",
-                            sale.getReceiptNumber(),
-                            username,
-                            "POS Checkout item: " + product.getName()
-                    );
-                    transactionRepository.save(tx);
+                        // Record audit ledger
+                        InventoryTransaction tx = new InventoryTransaction(
+                                product.getId(),
+                                product.getName(),
+                                "SALE",
+                                -item.getQuantity(),
+                                newStock,
+                                "POS_SALE",
+                                sale.getReceiptNumber(),
+                                username,
+                                "POS Checkout item: " + product.getName()
+                        );
+                        transactionRepository.save(tx);
 
-                    // Low stock alert check
-                    if (newStock <= product.getMinStockLevel()) {
-                        notificationRepository.save(new Notification(
-                                "Low Stock Alert: " + product.getName(),
-                                "Stock decreased to " + newStock + " " + product.getUnit() + " (Min: " + product.getMinStockLevel() + ")",
-                                "LOW_STOCK",
-                                "HIGH",
-                                "inventory.html"
-                        ));
+                        // Low stock alert check
+                        if (newStock <= product.getMinStockLevel()) {
+                            notificationRepository.save(new Notification(
+                                    "Low Stock Alert: " + product.getName(),
+                                    "Stock decreased to " + newStock + " " + product.getUnit() + " (Min: " + product.getMinStockLevel() + ")",
+                                    "LOW_STOCK",
+                                    "HIGH",
+                                    "inventory.html"
+                            ));
+                        }
                     }
                 }
             }
@@ -136,7 +138,7 @@ public class SaleController {
         // Restock inventory if requested
         if (returnRecord.getItems() != null) {
             for (ReturnRecord.ReturnItem item : returnRecord.getItems()) {
-                if (item.isRestocked()) {
+                if (item.isRestocked() && item.getProductId() != null && !item.getProductId().trim().isEmpty()) {
                     Product product = productRepository.findById(item.getProductId()).orElse(null);
                     if (product != null) {
                         double newStock = product.getCurrentStock() + item.getQuantity();

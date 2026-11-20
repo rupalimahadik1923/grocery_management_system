@@ -20,4 +20,19 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 
     @Query("{'$expr': {'$lte': ['$currentStock', '$minStockLevel']}}")
     List<Product> findLowStockProducts();
+
+    // Store-scoped query methods
+    List<Product> findByStoreId(String storeId);
+    List<Product> findByStoreIdAndCategoryId(String storeId, String categoryId);
+    List<Product> findByStoreIdAndStatus(String storeId, String status);
+    Optional<Product> findByStoreIdAndId(String storeId, String id);
+    Optional<Product> findByStoreIdAndSku(String storeId, String sku);
+    Optional<Product> findByStoreIdAndBarcode(String storeId, String barcode);
+    boolean existsByStoreIdAndSku(String storeId, String sku);
+
+    @Query("{'storeId': ?0, '$or': [{'name': {'$regex': ?1, '$options': 'i'}}, {'sku': {'$regex': ?1, '$options': 'i'}}, {'barcode': {'$regex': ?1, '$options': 'i'}}]}")
+    List<Product> searchByStoreAndQuery(String storeId, String query);
+
+    @Query("{'storeId': ?0, '$expr': {'$lte': ['$currentStock', '$minStockLevel']}}")
+    List<Product> findLowStockProductsByStore(String storeId);
 }

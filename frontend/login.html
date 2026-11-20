@@ -3,170 +3,383 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | Grocery Management System</title>
+  <title>Staff & Admin Login | Multi-Tenant Grocery Platform</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/forms.css">
-  <style>
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-      padding: 20px;
-    }
-    .login-container {
-      width: 100%;
-      max-width: 440px;
-      background: #ffffff;
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius-lg);
-      padding: 36px 32px;
-      box-shadow: var(--shadow-xl);
-    }
-    .brand-header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-    .brand-icon {
-      font-size: 44px;
-      margin-bottom: 12px;
-      display: inline-block;
-    }
-    .brand-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--gray-900);
-      letter-spacing: -0.5px;
-    }
-    .brand-subtitle {
-      font-size: 13px;
-      color: var(--gray-500);
-      margin-top: 4px;
-    }
-    .demo-roles-box {
-      margin-top: 24px;
-      padding: 16px;
-      background: var(--gray-50);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--gray-200);
-    }
-    .demo-roles-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--gray-500);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
-    }
-    .role-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .role-pill-btn {
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      border-radius: var(--radius-sm);
-      background: #ffffff;
-      border: 1px solid var(--gray-300);
-      color: var(--gray-700);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-    }
-    .role-pill-btn:hover {
-      background: var(--primary-50);
-      border-color: var(--primary-500);
-      color: var(--primary-800);
-    }
-    .alert-error {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      margin-bottom: 16px;
-      display: none;
-    }
-  </style>
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="login-body">
 
-  <div class="login-container">
-    <div class="brand-header">
-      <div class="brand-icon">🌿</div>
-      <h1 class="brand-title">FreshGrocery POS</h1>
-      <p class="brand-subtitle">Enterprise Grocery & Inventory Management</p>
+  <div class="login-split-layout">
+    
+    <!-- =========================================
+         LEFT HERO PANEL (BRAND & SHOWCASE)
+         ========================================= -->
+    <div class="hero-panel">
+      <div class="hero-glow-1"></div>
+      <div class="hero-glow-2"></div>
+
+      <!-- Top Brand Header -->
+      <div class="hero-brand">
+        <div class="hero-brand-logo">🌿</div>
+        <div class="hero-brand-text">
+          <h2>FreshGrocery SaaS</h2>
+          <span>Multi-Tenant Grocery Platform</span>
+        </div>
+      </div>
+
+      <!-- Main Showcase Content -->
+      <div class="hero-content">
+        <div class="hero-badge-pill">
+          <span>🏬 Multi-Store Architecture</span>
+        </div>
+        
+        <h1 class="hero-headline">
+          Independent stores, <br>
+          <span class="highlight">one unified retail cloud.</span>
+        </h1>
+        
+        <p class="hero-description">
+          Each store owner manages their own independent catalog, staff, pricing, and FEFO inventory. 
+          Cashiers log into their dedicated store terminal with zero cross-store overlap.
+        </p>
+
+        <!-- Feature Grid -->
+        <div class="hero-features">
+          <div class="hero-feature-card">
+            <div class="hero-feature-icon">🏬</div>
+            <div class="hero-feature-title">Multi-Tenant Isolation</div>
+            <div class="hero-feature-desc">Dedicated store code scoping for products, sales, and staff access.</div>
+          </div>
+
+          <div class="hero-feature-card">
+            <div class="hero-feature-icon">⚡</div>
+            <div class="hero-feature-title">High-Speed POS Terminal</div>
+            <div class="hero-feature-desc">Sub-second scan, multi-tender payment, and 80mm thermal receipts.</div>
+          </div>
+
+          <div class="hero-feature-card">
+            <div class="hero-feature-icon">👥</div>
+            <div class="hero-feature-title">Admin Staff Issuance</div>
+            <div class="hero-feature-desc">Store owners issue cashier & manager logins directly in the software.</div>
+          </div>
+
+          <div class="hero-feature-card">
+            <div class="hero-feature-icon">📦</div>
+            <div class="hero-feature-title">FEFO Expiry Management</div>
+            <div class="hero-feature-desc">Automated first-expiry batch dispatch preventing inventory waste.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Live Status Bar -->
+      <div class="hero-footer">
+        <div class="system-status-indicator" id="live-system-status">
+          <div class="status-dot-pulse"></div>
+          <span>Connecting to Store Cloud...</span>
+        </div>
+        <div>Spring Boot 3.2 • MongoDB Multi-Tenant</div>
+      </div>
     </div>
 
-    <div id="error-box" class="alert-error"></div>
+    <!-- =========================================
+         RIGHT AUTH FORM PANEL
+         ========================================= -->
+    <div class="auth-panel">
+      <div class="auth-card-inner">
+        
+        <div class="auth-header">
+          <div class="portal-tab-group">
+            <button type="button" class="portal-tab-btn active-tab" id="tab-staff">
+              <span>👥 Staff Login</span>
+            </button>
+            <button type="button" class="portal-tab-btn" id="tab-owner">
+              <span>👑 Store Admin</span>
+            </button>
+          </div>
 
-    <form id="login-form">
-      <div class="form-group">
-        <label class="form-label" for="username">Username</label>
-        <input type="text" id="username" class="form-control" placeholder="Enter username" required autofocus>
+          <h2 class="auth-title" id="auth-panel-title">Staff Terminal Login</h2>
+          <p class="auth-subtitle" id="auth-panel-subtitle">Enter your store code and staff credentials to access your terminal.</p>
+        </div>
+
+        <!-- Dynamic Error Box -->
+        <div id="error-box" class="login-alert login-alert-error"></div>
+
+        <!-- Main Login Form -->
+        <form id="login-form" novalidate>
+          
+          <!-- Store Code Input (Only visible in Staff Mode) -->
+          <div class="auth-form-group" id="store-code-group">
+            <label class="auth-label" for="store-code">
+              <span>Store Code</span>
+              <span style="font-size: 11px; font-weight: normal; color: var(--gray-400);">Default: <code>freshgrocery</code></span>
+            </label>
+            <div class="input-container">
+              <span class="input-prefix-icon">🏬</span>
+              <input 
+                type="text" 
+                id="store-code" 
+                class="auth-input" 
+                placeholder="e.g. freshgrocery or indiranagar" 
+                value="freshgrocery"
+                autocomplete="off"
+              >
+            </div>
+            <!-- Real-time Store Verification Indicator -->
+            <div id="store-verification-badge" class="store-verification-pill verified">
+              <span>✓</span> <span id="store-verification-text">Store: FreshGrocery Supermarket (Bengaluru)</span>
+            </div>
+          </div>
+
+          <!-- Username Input -->
+          <div class="auth-form-group">
+            <label class="auth-label" for="username" id="username-label">Staff Username</label>
+            <div class="input-container">
+              <span class="input-prefix-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <input 
+                type="text" 
+                id="username" 
+                class="auth-input" 
+                placeholder="Enter staff username" 
+                required 
+                autocomplete="username" 
+                autofocus
+              >
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="auth-form-group">
+            <div class="auth-label">
+              <label for="password">Password</label>
+            </div>
+            <div class="input-container">
+              <span class="input-prefix-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <input 
+                type="password" 
+                id="password" 
+                class="auth-input has-toggle" 
+                placeholder="Enter password" 
+                required 
+                autocomplete="current-password"
+              >
+              <button type="button" class="password-toggle-btn" id="toggle-password-btn" aria-label="Toggle password visibility">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Caps Lock Alert -->
+            <div id="caps-lock-warning" class="login-alert-caps">
+              <span>⚠️ Caps Lock is active</span>
+            </div>
+          </div>
+
+          <!-- Form Utility (Remember me & Help) -->
+          <div class="form-utility-row">
+            <label class="remember-checkbox-label">
+              <input type="checkbox" id="remember-me">
+              <span>Remember username</span>
+            </label>
+            <span class="form-help-link" style="color: var(--gray-400); font-size: 12px; cursor: default;">
+              Need credentials? Ask Store Owner
+            </span>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-auth-submit" id="login-submit-btn">
+            <span id="submit-btn-text">Sign In to Terminal</span>
+            <span>➔</span>
+          </button>
+        </form>
+
+        <!-- Register New Store CTA Banner -->
+        <div class="register-store-cta">
+          <div class="register-store-cta-text">
+            <h4>Own a New Grocery Store?</h4>
+            <p>Create your independent store workspace in 30 seconds.</p>
+          </div>
+          <button type="button" class="btn-open-register-modal" id="btn-open-register">
+            ➕ Register Store
+          </button>
+        </div>
+
       </div>
+    </div>
 
-      <div class="form-group">
-        <label class="form-label" for="password">Password</label>
-        <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+  </div>
+
+  <!-- =========================================
+       REGISTER NEW STORE MODAL
+       ========================================= -->
+  <!-- =========================================
+       REGISTER NEW STORE MODAL
+       ========================================= -->
+  <div class="modal-overlay" id="register-store-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; font-size: 17.5px; font-weight: 800; color: #0f172a;">🏬 Register New Grocery Store</h3>
+          <p style="margin: 3px 0 0; font-size: 12px; color: #64748b;">Set up your independent store workspace with dedicated catalog and staff.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-register" aria-label="Close modal">&times;</button>
       </div>
+      
+      <form id="register-store-form" novalidate>
+        <div class="modal-body" id="register-modal-body">
+          <div id="register-error-box" class="login-alert login-alert-error" style="display: none; margin-bottom: 16px;"></div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 12px;" id="login-submit-btn">
-        Sign In
-      </button>
-    </form>
+          <!-- Section 1: Store Profile -->
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; color: #64748b; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <span>🏢</span> <span>Store Profile</span>
+          </div>
 
-    <div class="demo-roles-box">
-      <div class="demo-roles-title">⚡ Quick Demo Accounts</div>
-      <div class="role-pills">
-        <button type="button" class="role-pill-btn" onclick="fillDemo('admin', 'admin123')">👑 Admin</button>
-        <button type="button" class="role-pill-btn" onclick="fillDemo('manager', 'manager123')">📊 Manager</button>
-        <button type="button" class="role-pill-btn" onclick="fillDemo('cashier', 'cashier123')">🛒 Cashier</button>
-        <button type="button" class="role-pill-btn" onclick="fillDemo('inventory', 'inventory123')">📋 Inventory</button>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" for="reg-store-name" style="font-size: 12.5px; font-weight: 700;">Store Name *</label>
+            <input type="text" id="reg-store-name" class="form-control" required placeholder="e.g. Metro Mart Supermarket">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label class="form-label" for="reg-store-code" style="font-size: 12.5px; font-weight: 700;">Store Code / Tenant ID *</label>
+              <div id="reg-store-code-feedback" class="live-feedback-pill" style="display: none;"></div>
+            </div>
+            <input type="text" id="reg-store-code" class="form-control" required placeholder="e.g. metromart">
+            <span style="font-size: 11px; color: #64748b; display: block; margin-top: 4px;">Staff will use this unique code to sign in to your store's POS terminal.</span>
+          </div>
+
+          <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 14px;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-city" style="font-size: 12.5px; font-weight: 700;">City *</label>
+              <input type="text" id="reg-city" class="form-control" required placeholder="e.g. Bengaluru">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-address" style="font-size: 12.5px; font-weight: 700;">Store Address (Optional)</label>
+              <input type="text" id="reg-address" class="form-control" placeholder="e.g. Indiranagar 100ft Rd">
+            </div>
+          </div>
+
+          <!-- Section 2: Owner & Admin Account -->
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; color: #64748b; margin: 18px 0 10px; display: flex; align-items: center; gap: 6px;">
+            <span>👑</span> <span>Store Owner & Admin Credentials</span>
+          </div>
+
+          <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 14px;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-owner-name" style="font-size: 12.5px; font-weight: 700;">Owner Full Name *</label>
+              <input type="text" id="reg-owner-name" class="form-control" required placeholder="e.g. Rajesh Kumar">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-phone" style="font-size: 12.5px; font-weight: 700;">Owner Phone</label>
+              <input type="tel" id="reg-phone" class="form-control" placeholder="e.g. 9876543210">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" for="reg-owner-email" style="font-size: 12.5px; font-weight: 700;">Owner Email *</label>
+            <input type="email" id="reg-owner-email" class="form-control" required placeholder="e.g. owner@metromart.com">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" for="reg-admin-username" style="font-size: 12.5px; font-weight: 700;">
+              <span>Custom Admin Username</span>
+              <span style="font-size: 11px; font-weight: normal; color: #64748b;">(Optional - default: &lt;code&gt;_admin)</span>
+            </label>
+            <input type="text" id="reg-admin-username" class="form-control" placeholder="e.g. admin or your name">
+            <span style="font-size: 11px; color: #64748b; display: block; margin-top: 4px;">💡 Note: You can also log in anytime using your <strong>Store Code</strong> or <strong>Owner Email</strong>!</span>
+          </div>
+
+          <!-- Section 3: Security & Passwords -->
+          <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 6px;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-password" style="font-size: 12.5px; font-weight: 700;">Admin Password *</label>
+              <input type="password" id="reg-password" class="form-control" required placeholder="Min 6 characters">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="reg-password-confirm" style="font-size: 12.5px; font-weight: 700;">Confirm Password *</label>
+              <input type="password" id="reg-password-confirm" class="form-control" required placeholder="Repeat password">
+            </div>
+          </div>
+          <div id="reg-password-feedback" class="live-feedback-pill" style="display: none; margin-bottom: 10px;"></div>
+
+          <!-- Bottom Alert Message Box directly visible above the submit button -->
+          <div id="register-bottom-error-box" class="login-alert login-alert-error" style="display: none; margin-top: 10px;"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-register" style="padding: 9px 18px;">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-register" style="padding: 9px 24px; font-weight: 700;">
+            🚀 Create Store & Launch
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================
+       STORE REGISTRATION SUCCESS CREDENTIALS MODAL
+       ========================================= -->
+  <div class="modal-overlay" id="register-success-modal">
+    <div class="modal-card" style="max-width: 480px; text-align: center;">
+      <div class="modal-body" style="padding: 28px 24px;">
+        <div style="font-size: 46px; margin-bottom: 8px;">🎉</div>
+        <h3 style="font-size: 20px; font-weight: 800; color: #059669; margin: 0 0 6px;">Store Created Successfully!</h3>
+        <p style="font-size: 13.5px; color: #64748b; margin: 0 0 20px;">
+          Your independent supermarket workspace is ready. Save your credentials below for logging in later:
+        </p>
+
+        <div class="success-credentials-box">
+          <div class="success-cred-row">
+            <span class="success-cred-label">Store Name:</span>
+            <span class="success-cred-val" id="success-store-name">-</span>
+          </div>
+          <div class="success-cred-row">
+            <span class="success-cred-label">Store Code:</span>
+            <code class="success-cred-code" id="success-store-code">-</code>
+          </div>
+          <div class="success-cred-row">
+            <span class="success-cred-label">Admin Username:</span>
+            <code class="success-cred-user" id="success-admin-username">-</code>
+          </div>
+          <div class="success-cred-row">
+            <span class="success-cred-label">Owner Email:</span>
+            <span class="success-cred-val" id="success-owner-email">-</span>
+          </div>
+          <div style="border-top: 1px dashed #e2e8f0; padding-top: 10px; font-size: 12px; color: #64748b; line-height: 1.45; text-align: left;">
+            💡 <strong>How to re-login anytime:</strong><br>
+            • <strong>Store Admin Login:</strong> Enter your <em>Username</em>, <em>Email</em>, or <em>Store Code</em> + Password.<br>
+            • <strong>Staff Terminal Login:</strong> Enter Store Code + Staff Username (or "admin") + Password.
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="btn-close-success" style="flex: 1; padding: 11px;">
+            ✕ Close
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-proceed-dashboard" style="flex: 2; padding: 11px; font-weight: 700;">
+            🚀 Open Store Dashboard
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import { Auth } from './js/auth.js';
-
-    // If already authenticated, redirect to dashboard or POS
-    if (Auth.isAuthenticated()) {
-      const user = Auth.getUser();
-      window.location.href = user && user.role === 'CASHIER' ? 'pos.html' : 'dashboard.html';
-    }
-
-    window.fillDemo = (username, password) => {
-      document.getElementById('username').value = username;
-      document.getElementById('password').value = password;
-    };
-
-    const form = document.getElementById('login-form');
-    const errorBox = document.getElementById('error-box');
-    const submitBtn = document.getElementById('login-submit-btn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorBox.style.display = 'none';
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Authenticating...';
-
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-
-      try {
-        const user = await Auth.login(username, password);
-        window.location.href = user.role === 'CASHIER' ? 'pos.html' : 'dashboard.html';
-      } catch (err) {
-        errorBox.textContent = err.message || 'Login failed. Please check your credentials.';
-        errorBox.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-      }
-    });
-  </script>
+  <!-- Auth Controller Script -->
+  <script type="module" src="./js/login.js"></script>
 </body>
 </html>

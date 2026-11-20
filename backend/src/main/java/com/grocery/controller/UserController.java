@@ -28,15 +28,26 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> list = userRepository.findAll().stream()
+    public ResponseEntity<List<UserResponse>> getAllUsers(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        String storeCode = null;
+        if (userDetails instanceof com.grocery.security.UserPrincipal) {
+            storeCode = ((com.grocery.security.UserPrincipal) userDetails).getStoreCode();
+        }
+
+        List<User> users = (storeCode != null && !storeCode.isEmpty())
+                ? userRepository.findByStoreCode(storeCode)
+                : userRepository.findAll();
+
+        List<UserResponse> list = users.stream()
                 .map(u -> new UserResponse(u.getId(), u.getUsername(), u.getFullName(), u.getEmail(), u.getPhone(), u.getRole(), u.getStatus()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @RequestBody Map<String, String> body,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
         String username = body.get("username");
         String password = body.getOrDefault("password", "password123");
         String fullName = body.get("fullName");
@@ -44,7 +55,16 @@ public class UserController {
         String phone = body.get("phone");
         String roleStr = body.getOrDefault("role", "CASHIER");
 
-        if (userRepository.existsByUsername(username)) {
+        String storeId = null;
+        String storeCode = null;
+        if (userDetails instanceof com.grocery.security.UserPrincipal) {
+            storeId = ((com.grocery.security.UserPrincipal) userDetails).getStoreId();
+            storeCode = ((com.grocery.security.UserPrincipal) userDetails).getStoreCode();
+        }
+
+        if (storeCode != null && userRepository.existsByUsernameAndStoreCode(username, storeCode)) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Username already taken in this store"));
+        } else if (storeCode == null && userRepository.existsByUsername(username)) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Username already taken"));
         }
 
@@ -55,7 +75,7 @@ public class UserController {
             role = UserRole.CASHIER;
         }
 
-        User user = new User(username, passwordEncoder.encode(password), fullName, email, phone, role);
+        User user = new User(username, passwordEncoder.encode(password), fullName, email, phone, role, storeId, storeCode);
         user.setStatus(UserStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
         User saved = userRepository.save(user);

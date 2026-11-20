@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "6acfcd316da9c130faae469c",
+    "productId": "6ace25a7e0b01e2478d344ea",
+    "productName": "Amul Taaza Milk 500ml",
+    "type": "SALE",
+    "quantity": -2,
+    "balanceAfter": 48,
+    "referenceType": "POS_SALE",
+    "referenceId": "RCP-2026-95978",
+    "performedBy": "admin",
+    "notes": "POS Checkout item: Amul Taaza Milk 500ml",
+    "createdAt": "2026-10-14T18:42:57.773Z",
+    "_class": "com.grocery.model.InventoryTransaction"
+  }
+]
