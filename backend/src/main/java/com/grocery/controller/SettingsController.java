@@ -3,7 +3,10 @@ package com.grocery.controller;
 import com.grocery.dto.ApiResponse;
 import com.grocery.model.StoreSettings;
 import com.grocery.repository.StoreSettingsRepository;
+import com.grocery.security.UserPrincipal;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,20 +21,38 @@ public class SettingsController {
         this.storeSettingsRepository = storeSettingsRepository;
     }
 
+    private String resolveSettingsId(UserPrincipal user) {
+        return (user != null && user.getStoreId() != null)
+                ? "STORE_SETTINGS_" + user.getStoreId()
+                : "STORE_SETTINGS_PRIMARY";
+    }
+
     @GetMapping
-    public ResponseEntity<StoreSettings> getSettings() {
-        StoreSettings settings = storeSettingsRepository.findById("STORE_SETTINGS_PRIMARY")
+    public ResponseEntity<StoreSettings> getSettings(@AuthenticationPrincipal UserPrincipal user) {
+        String settingsId = resolveSettingsId(user);
+        StoreSettings settings = storeSettingsRepository.findById(settingsId)
                 .orElseGet(() -> {
                     StoreSettings s = new StoreSettings();
+                    s.setId(settingsId);
+                    if (user != null) s.setStoreId(user.getStoreId());
                     return storeSettingsRepository.save(s);
                 });
         return ResponseEntity.ok(settings);
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<StoreSettings>> updateSettings(@RequestBody StoreSettings update) {
-        StoreSettings existing = storeSettingsRepository.findById("STORE_SETTINGS_PRIMARY")
-                .orElse(new StoreSettings());
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<StoreSettings>> updateSettings(
+            @RequestBody StoreSettings update,
+            @AuthenticationPrincipal UserPrincipal user) {
+        String settingsId = resolveSettingsId(user);
+        StoreSettings existing = storeSettingsRepository.findById(settingsId)
+                .orElseGet(() -> {
+                    StoreSettings s = new StoreSettings();
+                    s.setId(settingsId);
+                    if (user != null) s.setStoreId(user.getStoreId());
+                    return s;
+                });
 
         existing.setStoreName(update.getStoreName());
         existing.setLegalName(update.getLegalName());

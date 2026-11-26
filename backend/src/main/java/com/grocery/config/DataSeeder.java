@@ -51,8 +51,8 @@ public class DataSeeder implements CommandLineRunner {
         seedSettings(defaultStore);
         seedCategoriesAndProducts(defaultStore);
         migrateLegacyProducts(defaultStore);
+        seedCustomers(defaultStore);
         ensureIndexes();
-        seedCustomers();
     }
 
     private Store seedDefaultStore() {
@@ -201,7 +201,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     /**
-     * Ensure unique compound index on (storeId, sku)
+     * Ensure compound unique indexes safely without losing records or crashing startup.
      */
     private void ensureIndexes() {
         try {
@@ -214,11 +214,100 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception ex) {
             logger.warn("Could not ensure compound index on products: {}", ex.getMessage());
         }
+
+        migrateCustomerPhoneIndex();
+        migrateSupplierCodeIndex();
+        migrateReturnIdempotencyIndex();
     }
 
-    private void seedCustomers() {
+    private void migrateReturnIdempotencyIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(com.grocery.model.ReturnRecord.class);
+            boolean hasLegacyIdx = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "storeId_idempotencyKey_idx".equals(idx.getName()));
+            if (hasLegacyIdx) {
+                indexOps.dropIndex("storeId_idempotencyKey_idx");
+                logger.info("Dropped legacy non-partial index 'storeId_idempotencyKey_idx' on returns collection.");
+            }
+        } catch (Exception ex) {
+            logger.warn("Could not migrate return idempotency index: {}", ex.getMessage());
+        }
+    }
+
+    private void migrateCustomerPhoneIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(Customer.class);
+            boolean hasLegacyGlobalPhone = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "phone".equals(idx.getName()) && idx.isUnique());
+
+            List<Customer> all = customerRepository.findAll();
+            boolean hasMissingStore = all.stream().anyMatch(c -> c.getStoreId() == null || c.getStoreId().trim().isEmpty());
+            long distinctPairs = all.stream()
+                    .filter(c -> c.getStoreId() != null && c.getPhone() != null)
+                    .map(c -> c.getStoreId() + "#" + c.getPhone())
+                    .distinct().count();
+            long nonNullPairs = all.stream()
+                    .filter(c -> c.getStoreId() != null && c.getPhone() != null)
+                    .count();
+
+            if (hasMissingStore || distinctPairs < nonNullPairs) {
+                logger.warn("Skipping Customer compound index migration: missing storeId or intra-store duplicate phone detected.");
+                return;
+            }
+            if (hasLegacyGlobalPhone) {
+                indexOps.dropIndex("phone");
+                logger.info("Dropped legacy global unique index 'phone' on customers collection.");
+            }
+            indexOps.ensureIndex(
+                    new CompoundIndexDefinition(new org.bson.Document("storeId", 1).append("phone", 1))
+                            .unique()
+                            .named("storeId_phone_unique_idx")
+            );
+            logger.info("Verified compound unique index on Customer collection: storeId_phone_unique_idx (storeId, phone)");
+        } catch (Exception ex) {
+            logger.warn("Customer index migration warning: {}", ex.getMessage());
+        }
+    }
+
+    private void migrateSupplierCodeIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(Supplier.class);
+            boolean hasLegacyGlobalCode = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "code".equals(idx.getName()) && idx.isUnique());
+
+            List<Supplier> all = mongoTemplate.findAll(Supplier.class);
+            boolean hasMissingStore = all.stream().anyMatch(s -> s.getStoreId() == null || s.getStoreId().trim().isEmpty());
+            long distinctPairs = all.stream()
+                    .filter(s -> s.getStoreId() != null && s.getCode() != null)
+                    .map(s -> s.getStoreId() + "#" + s.getCode())
+                    .distinct().count();
+            long nonNullPairs = all.stream()
+                    .filter(s -> s.getStoreId() != null && s.getCode() != null)
+                    .count();
+
+            if (hasMissingStore || distinctPairs < nonNullPairs) {
+                logger.warn("Skipping Supplier compound index migration: missing storeId or intra-store duplicate code detected.");
+                return;
+            }
+            if (hasLegacyGlobalCode) {
+                indexOps.dropIndex("code");
+                logger.info("Dropped legacy global unique index 'code' on suppliers collection.");
+            }
+            indexOps.ensureIndex(
+                    new CompoundIndexDefinition(new org.bson.Document("storeId", 1).append("code", 1))
+                            .unique()
+                            .named("storeId_code_unique_idx")
+            );
+            logger.info("Verified compound unique index on Supplier collection: storeId_code_unique_idx (storeId, code)");
+        } catch (Exception ex) {
+            logger.warn("Supplier index migration warning: {}", ex.getMessage());
+        }
+    }
+
+    private void seedCustomers(Store defaultStore) {
         if (customerRepository.count() == 0) {
             Customer c1 = new Customer("Rahul Sharma", "9876501234", "rahul.sharma@example.com", "Indiranagar, Bengaluru");
+            c1.setStoreId(defaultStore.getId());
             c1.setLoyaltyPoints(140);
             c1.setTotalSpent(14500.0);
             c1.setOrdersCount(8);
@@ -226,6 +315,7 @@ public class DataSeeder implements CommandLineRunner {
             customerRepository.save(c1);
 
             Customer c2 = new Customer("Priya Patel", "9876505678", "priya.patel@example.com", "Koramangala, Bengaluru");
+            c2.setStoreId(defaultStore.getId());
             c2.setLoyaltyPoints(35);
             c2.setTotalSpent(3800.0);
             c2.setOrdersCount(3);
@@ -233,6 +323,16 @@ public class DataSeeder implements CommandLineRunner {
             customerRepository.save(c2);
 
             logger.info("Seeded 2 default Customer profiles.");
+        } else {
+            // Backfill only the 2 DataSeeder demo customers if they were seeded prior to storeId
+            for (String demoPhone : List.of("9876501234", "9876505678")) {
+                customerRepository.findByPhone(demoPhone).ifPresent(c -> {
+                    if (c.getStoreId() == null || c.getStoreId().trim().isEmpty()) {
+                        c.setStoreId(defaultStore.getId());
+                        customerRepository.save(c);
+                    }
+                });
+            }
         }
     }
 }

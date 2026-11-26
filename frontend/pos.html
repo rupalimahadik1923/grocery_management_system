@@ -454,14 +454,16 @@
       if (!query) return;
       const lower = query.toLowerCase();
 
-      // Find by exact barcode, SKU, or name match
+      // Find by exact barcode, SKU, or name match (ACTIVE products only)
       let match = products.find(p => 
-        (p.barcode && p.barcode.toLowerCase() === lower) ||
-        (p.sku && p.sku.toLowerCase() === lower)
+        p.status === 'ACTIVE' && (
+          (p.barcode && p.barcode.toLowerCase() === lower) ||
+          (p.sku && p.sku.toLowerCase() === lower)
+        )
       );
 
       if (!match) {
-        match = products.find(p => p.name.toLowerCase().includes(lower));
+        match = products.find(p => p.status === 'ACTIVE' && p.name.toLowerCase().includes(lower));
       }
 
       if (match) {
@@ -477,11 +479,12 @@
       try {
         const [catsRes, prodsRes] = await Promise.all([
           Api.get('/categories').catch(() => []),
-          Api.get('/products').catch(() => [])
+          Api.get('/products?status=ACTIVE').catch(() => [])
         ]);
 
         categories = Array.isArray(catsRes) ? catsRes : (catsRes.data || []);
-        products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+        const rawProds = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+        products = rawProds.filter(p => p.status === 'ACTIVE');
 
         renderCategoryPills();
         renderProductGrid();
@@ -512,7 +515,7 @@
     }
 
     function renderProductGrid() {
-      let filtered = products;
+      let filtered = products.filter(p => p.status === 'ACTIVE');
       if (selectedCategory !== 'ALL') {
         filtered = filtered.filter(p => p.categoryId === selectedCategory);
       }
@@ -545,7 +548,7 @@
 
       productGrid.querySelectorAll('.pos-product-card').forEach(card => {
         card.addEventListener('click', () => {
-          const prod = products.find(p => p.id === card.dataset.id);
+          const prod = products.find(p => p.id === card.dataset.id && p.status === 'ACTIVE');
           if (prod) addToCart(prod);
         });
       });
@@ -564,6 +567,11 @@
     }
 
     function addToCart(product) {
+      if (!product || product.status !== 'ACTIVE') {
+        showToast('Only active products can be added to the cart', 'error');
+        return;
+      }
+
       const existing = cart.find(item => item.productId === product.id);
       if (existing) {
         existing.quantity += 1;
@@ -812,9 +820,10 @@
         document.getElementById('cart-ticket-num').textContent = `Ticket #${currentTicketNum}`;
         renderCart();
 
-        // Refresh product stock list in background
-        Api.get('/products').then(prodsRes => {
-          products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+        // Refresh product stock list in background (ACTIVE products only)
+        Api.get('/products?status=ACTIVE').then(prodsRes => {
+          const rawProds = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+          products = rawProds.filter(p => p.status === 'ACTIVE');
           renderProductGrid();
         }).catch(() => {});
 

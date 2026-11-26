@@ -1,6 +1,8 @@
 package com.grocery.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class StoreRegistrationRequest {
 
@@ -8,6 +10,7 @@ public class StoreRegistrationRequest {
     private String storeName;
 
     @NotBlank(message = "Store code is required")
+    @Size(min = 2, max = 50, message = "Store code must be between 2 and 50 characters")
     private String storeCode;
 
     @NotBlank(message = "Owner name is required")
@@ -16,12 +19,16 @@ public class StoreRegistrationRequest {
     private String adminUsername; // Optional custom admin username (defaults to ownerName or storeCode + "_admin")
 
     @NotBlank(message = "Owner email is required")
+    @Email(message = "Please enter a valid owner email address")
     private String ownerEmail;
 
     @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
     private String phone;
+
+    @NotBlank(message = "City is required")
     private String city;
     private String address;
     private String gstin;

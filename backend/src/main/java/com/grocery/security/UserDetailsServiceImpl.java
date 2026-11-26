@@ -53,13 +53,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         .findFirst();
             }
 
-            // 1.4 Try matching full name in this store (case-insensitive)
-            if (userOpt.isEmpty()) {
-                userOpt = storeUsers.stream()
-                        .filter(u -> u.getFullName() != null && u.getFullName().trim().equalsIgnoreCase(login))
-                        .findFirst();
-            }
-
             User user = userOpt.orElseThrow(() -> 
                 new UsernameNotFoundException("Staff user '" + login + "' not found in store '" + storeCode + "'")
             );
@@ -85,13 +78,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (userOpt.isEmpty()) {
             userOpt = userRepository.findByStoreCode(cleanIdentifier.toLowerCase()).stream()
                     .filter(u -> u.getRole() == UserRole.ADMIN)
-                    .findFirst();
-        }
-
-        // 2.4 Case-insensitive full name
-        if (userOpt.isEmpty()) {
-            userOpt = userRepository.findAll().stream()
-                    .filter(u -> u.getFullName() != null && u.getFullName().trim().equalsIgnoreCase(cleanIdentifier))
                     .findFirst();
         }
 

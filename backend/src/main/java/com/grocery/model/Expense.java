@@ -1,6 +1,7 @@
 package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -8,10 +9,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(collection = "expenses")
+@CompoundIndex(name = "storeId_expenseDate_idx", def = "{'storeId': 1, 'expenseDate': -1}")
 public class Expense {
 
     @Id
     private String id;
+
+    @Indexed
+    private String storeId;
 
     private String title;
 
@@ -47,6 +52,9 @@ public class Expense {
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

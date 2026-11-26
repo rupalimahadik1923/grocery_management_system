@@ -13,4 +13,9 @@ public interface InventoryBatchRepository extends MongoRepository<InventoryBatch
     List<InventoryBatch> findByProductIdAndCurrentQtyGreaterThanOrderByExpiryDateAsc(String productId, double minQty);
     List<InventoryBatch> findByExpiryDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, String status);
     List<InventoryBatch> findByStatus(String status);
+
+    // Tenant-scoped queries
+    List<InventoryBatch> findByStoreId(String storeId);
+    List<InventoryBatch> findByStoreIdAndExpiryDateBetweenAndStatus(String storeId, LocalDate startDate, LocalDate endDate, String status);
+    boolean existsByStoreIdAndProductId(String storeId, String productId);
 }

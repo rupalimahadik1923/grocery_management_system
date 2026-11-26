@@ -12,38 +12,84 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar dynamically injected by layout.js -->
     <div id="sidebar-container"></div>
 
     <div class="main-wrapper">
-      <!-- Topbar dynamically injected by layout.js -->
       <div id="topbar-container"></div>
 
       <main class="content-body">
-        <!-- Quick Action Bar -->
-        <div class="quick-actions-bar">
-          <a href="pos.html" class="btn btn-primary">🛒 Launch POS Checkout</a>
-          <a href="products.html" class="btn btn-secondary">📦 New Product</a>
-          <a href="purchases.html" class="btn btn-secondary">🚚 Inward Purchase</a>
-          <a href="reports.html" class="btn btn-secondary">📈 Sales Analytics</a>
+        <div class="dashboard-toolbar">
+          <div class="quick-actions-bar">
+            <a href="pos.html" class="btn btn-primary">🛒 Launch POS Checkout</a>
+            <a href="products.html" class="btn btn-secondary">📦 New Product</a>
+            <a href="purchases.html" class="btn btn-secondary">🚚 Inward Purchase</a>
+            <a href="reports.html" class="btn btn-secondary">📈 Sales Analytics</a>
+          </div>
+
+          <div class="date-filter-bar">
+            <label for="date-range-preset" style="font-size: 13px; font-weight: 600;">Period:</label>
+            <select id="date-range-preset" aria-label="Dashboard Date Range">
+              <option value="1">Today</option>
+              <option value="7" selected>Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="date" id="filter-start-date" class="hidden" aria-label="Start Date" style="display:none;">
+            <input type="date" id="filter-end-date" class="hidden" aria-label="End Date" style="display:none;">
+            <button type="button" id="apply-date-filter" class="btn btn-secondary" style="display:none; padding: 5px 10px; font-size: 12px;">Apply</button>
+          </div>
         </div>
 
-        <!-- KPI Metrics Grid -->
+        <div id="dashboard-status-banner" class="dashboard-status-banner loading" role="status" aria-live="polite">
+          <span id="dashboard-status-text">Loading store dashboard metrics...</span>
+          <button type="button" id="dashboard-retry-btn" class="btn btn-secondary" style="display:none; padding: 4px 12px; font-size: 12px;">Retry</button>
+        </div>
+
+        <!-- Primary KPI Metrics Grid -->
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-info">
-              <span class="metric-label">Today's Sales</span>
-              <span class="metric-value" id="kpi-today-sales">₹0.00</span>
-              <span class="metric-trend up">Live POS revenue</span>
+              <span class="metric-label">Today's Net Sales (Tax-Incl.)</span>
+              <span class="metric-value" id="kpi-today-sales">--</span>
+              <span class="metric-sub" id="kpi-today-gross-sales">Gross: --</span>
             </div>
             <div class="metric-icon-box green">💰</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-info">
+              <span class="metric-label">Today's Orders</span>
+              <span class="metric-value" id="kpi-today-orders">--</span>
+              <span class="metric-sub" id="kpi-today-aov">AOV: --</span>
+              <span class="metric-trend muted" id="kpi-aov-note"></span>
+            </div>
+            <div class="metric-icon-box blue">🧾</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Period Net Sales (Tax-Incl.)</span>
+              <span class="metric-value" id="kpi-period-net-sales">--</span>
+              <span class="metric-sub" id="kpi-period-gross-sales">Gross: --</span>
+            </div>
+            <div class="metric-icon-box purple">📈</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Period Profit (Historical Cost)</span>
+              <span class="metric-value" id="kpi-net-profit">--</span>
+              <span class="metric-sub" id="kpi-gross-profit">Gross Profit: --</span>
+              <span class="metric-trend muted" id="kpi-cogs-note"></span>
+            </div>
+            <div class="metric-icon-box green">📊</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
               <span class="metric-label">Active Products</span>
-              <span class="metric-value" id="kpi-total-products">0</span>
-              <span class="metric-trend up">Across categories</span>
+              <span class="metric-value" id="kpi-total-products">--</span>
+              <span class="metric-trend up">Active catalog</span>
             </div>
             <div class="metric-icon-box blue">📦</div>
           </div>
@@ -51,63 +97,85 @@
           <div class="metric-card">
             <div class="metric-info">
               <span class="metric-label">Low Stock Items</span>
-              <span class="metric-value" id="kpi-low-stock">0</span>
-              <span class="metric-trend down">Below reorder level</span>
+              <span class="metric-value" id="kpi-low-stock">--</span>
+              <span class="metric-trend down">Above 0, at/below min</span>
             </div>
             <div class="metric-icon-box amber">⚠️</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-info">
-              <span class="metric-label">Expiring Soon (30d)</span>
-              <span class="metric-value" id="kpi-expiring">0</span>
-              <span class="metric-trend down">Batches near expiry</span>
+              <span class="metric-label">Out of Stock</span>
+              <span class="metric-value" id="kpi-out-of-stock">--</span>
+              <span class="metric-trend down">Needs immediate restock</span>
             </div>
-            <div class="metric-icon-box rose">⏳</div>
+            <div class="metric-icon-box red">🚫</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-info">
+              <span class="metric-label">Expiring Soon (7d)</span>
+              <span class="metric-value" id="kpi-expiring">--</span>
+              <span class="metric-sub" id="kpi-month-expenses">Month Expenses: --</span>
+            </div>
+            <div class="metric-icon-box amber">⏳</div>
           </div>
         </div>
 
-        <!-- Dashboard Two-Column Grid -->
+        <!-- Trend & Top Products -->
         <div class="dashboard-grid">
-          <!-- Recent Sales Activity -->
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-              <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900);">Recent Sales Receipts</h2>
-              <a href="sales.html" style="font-size: 13px; font-weight: 600;">View All &rarr;</a>
+          <div class="dashboard-card">
+            <div class="dashboard-card-header">
+              <h2 class="dashboard-card-title">Sales Trend (Net Sales, IST)</h2>
+              <span class="metric-sub" id="trend-range-label">Last 7 Days</span>
             </div>
-            <div class="table-container">
-              <table class="table" id="recent-sales-table">
+            <div id="sales-trend-chart" class="trend-chart-container">
+              <span class="metric-sub">Loading trend...</span>
+            </div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="dashboard-card-header">
+              <h2 class="dashboard-card-title">Top-Selling Products</h2>
+            </div>
+            <div id="top-products-list" class="top-products-list">
+              <span class="metric-sub">Loading top products...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Sales & Alerts -->
+        <div class="dashboard-grid">
+          <div class="dashboard-card">
+            <div class="dashboard-card-header">
+              <h2 class="dashboard-card-title">Recent POS Transactions</h2>
+              <a href="sales-history.html" style="font-size: 13px; color: var(--primary-color); font-weight: 600;">View All →</a>
+            </div>
+            <div class="table-container" style="box-shadow: none; border: none;">
+              <table class="data-table">
                 <thead>
                   <tr>
                     <th>Receipt #</th>
-                    <th>Time</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Method</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="recent-sales-tbody">
                   <tr>
-                    <td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">
-                      No sales recorded today yet.
-                    </td>
+                    <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 24px;">Loading recent transactions...</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- Stock & Expiry Quick Watch -->
-          <div class="card">
-            <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px;">
-              Attention Needed
-            </h2>
-            <div id="alerts-list" style="display: flex; flex-direction: column; gap: 12px;">
-              <div style="padding: 12px; background: var(--primary-50); border-radius: var(--radius-md); border: 1px solid var(--primary-200); font-size: 13px; color: var(--primary-900);">
-                ✨ <strong>System Initialized</strong><br>
-                Baseline connected to MongoDB. Ready for transactions.
-              </div>
+          <div class="dashboard-card">
+            <div class="dashboard-card-header">
+              <h2 class="dashboard-card-title">Store Alerts</h2>
+            </div>
+            <div id="alerts-list" class="alerts-list">
+              <span class="metric-sub">Loading alerts...</span>
             </div>
           </div>
         </div>
@@ -121,20 +189,257 @@
 
     Layout.init({ activePage: 'dashboard', title: 'Store Dashboard' });
 
-    async function loadDashboardData() {
-      try {
-        const stats = await Api.get('/reports/dashboard');
-        if (stats) {
-          document.getElementById('kpi-today-sales').textContent = `₹${(stats.todaySales || 0).toFixed(2)}`;
-          document.getElementById('kpi-total-products').textContent = stats.totalProducts || 0;
-          document.getElementById('kpi-low-stock').textContent = stats.lowStockCount || 0;
-          document.getElementById('kpi-expiring').textContent = stats.expiringCount || 0;
-        }
-      } catch (err) {
-        // Fallback for initial unseeded state
-        console.log('Dashboard initial load state:', err.message);
+    const banner = document.getElementById('dashboard-status-banner');
+    const bannerText = document.getElementById('dashboard-status-text');
+    const retryBtn = document.getElementById('dashboard-retry-btn');
+    const presetEl = document.getElementById('date-range-preset');
+    const startEl = document.getElementById('filter-start-date');
+    const endEl = document.getElementById('filter-end-date');
+    const applyBtn = document.getElementById('apply-date-filter');
+
+    function formatCurrency(val) {
+      return `₹${Number(val || 0).toFixed(2)}`;
+    }
+
+    function showBanner(type, message, showRetry = false) {
+      banner.className = `dashboard-status-banner ${type}`;
+      bannerText.textContent = message;
+      retryBtn.style.display = showRetry ? 'inline-block' : 'none';
+    }
+
+    function hideBanner() {
+      banner.className = 'dashboard-status-banner hidden';
+    }
+
+    function clearElement(el) {
+      while (el.firstChild) {
+        el.removeChild(el.firstChild);
       }
     }
+
+    function renderRecentSales(sales) {
+      const tbody = document.getElementById('recent-sales-tbody');
+      clearElement(tbody);
+
+      if (!sales || sales.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.style.textAlign = 'center';
+        td.style.color = 'var(--text-secondary)';
+        td.style.padding = '24px';
+        td.textContent = 'No recent transactions found.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const sale of sales) {
+        const tr = document.createElement('tr');
+
+        const tdReceipt = document.createElement('td');
+        tdReceipt.textContent = sale.receiptNumber || sale.id || '-';
+
+        const tdCustomer = document.createElement('td');
+        tdCustomer.textContent = sale.customerName || 'Walk-in Customer';
+
+        const tdAmount = document.createElement('td');
+        tdAmount.textContent = formatCurrency(sale.grandTotal);
+
+        const tdStatus = document.createElement('td');
+        const pill = document.createElement('span');
+        const status = (sale.status || 'COMPLETED').toUpperCase();
+        pill.className = 'status-pill ' + (status === 'REFUNDED' ? 'refunded' : status === 'PARTIALLY_RETURNED' ? 'partial' : 'completed');
+        pill.textContent = status;
+        tdStatus.appendChild(pill);
+
+        tr.appendChild(tdReceipt);
+        tr.appendChild(tdCustomer);
+        tr.appendChild(tdAmount);
+        tr.appendChild(tdStatus);
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderTopProducts(items) {
+      const container = document.getElementById('top-products-list');
+      clearElement(container);
+
+      if (!items || items.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'metric-sub';
+        empty.textContent = 'No product sales in selected period.';
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const item of items) {
+        const row = document.createElement('div');
+        row.className = 'top-product-row';
+
+        const left = document.createElement('div');
+        const nameEl = document.createElement('strong');
+        nameEl.textContent = item.productName || 'Product';
+        const qtyEl = document.createElement('div');
+        qtyEl.className = 'metric-sub';
+        qtyEl.textContent = `Net Qty: ${Number(item.netQuantity || 0)}`;
+        left.appendChild(nameEl);
+        left.appendChild(qtyEl);
+
+        const revEl = document.createElement('strong');
+        revEl.textContent = formatCurrency(item.revenue);
+
+        row.appendChild(left);
+        row.appendChild(revEl);
+        container.appendChild(row);
+      }
+    }
+
+    function renderSalesTrend(points) {
+      const container = document.getElementById('sales-trend-chart');
+      clearElement(container);
+
+      if (!points || points.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'metric-sub';
+        empty.textContent = 'No trend data available.';
+        container.appendChild(empty);
+        return;
+      }
+
+      const maxVal = Math.max(...points.map(p => Number(p.netSales || 0)), 1);
+
+      for (const pt of points) {
+        const col = document.createElement('div');
+        col.className = 'trend-bar-col';
+
+        const valEl = document.createElement('span');
+        valEl.className = 'trend-bar-value';
+        valEl.textContent = `₹${Math.round(Number(pt.netSales || 0))}`;
+
+        const track = document.createElement('div');
+        track.className = 'trend-bar-track';
+
+        const fill = document.createElement('div');
+        fill.className = 'trend-bar-fill';
+        const pct = Math.max(2, Math.round((Number(pt.netSales || 0) / maxVal) * 100));
+        fill.style.height = `${Number(pt.netSales || 0) > 0 ? pct : 2}%`;
+        fill.title = `${pt.date}: Net ${formatCurrency(pt.netSales)}, Gross ${formatCurrency(pt.grossSales)} (${pt.ordersCount} orders)`;
+
+        track.appendChild(fill);
+
+        const dateEl = document.createElement('span');
+        dateEl.className = 'trend-bar-date';
+        dateEl.textContent = (pt.date || '').slice(5);
+
+        col.appendChild(valEl);
+        col.appendChild(track);
+        col.appendChild(dateEl);
+        container.appendChild(col);
+      }
+    }
+
+    function renderAlerts(alerts) {
+      const container = document.getElementById('alerts-list');
+      clearElement(container);
+
+      if (!alerts || alerts.length === 0) {
+        const ok = document.createElement('div');
+        ok.className = 'alert-item medium';
+        ok.textContent = 'No active stock, expiry, or store alerts.';
+        container.appendChild(ok);
+        return;
+      }
+
+      for (const alert of alerts) {
+        const link = document.createElement('a');
+        const prio = (alert.priority || 'MEDIUM').toLowerCase();
+        link.className = `alert-item ${prio === 'critical' ? 'critical' : prio === 'high' ? 'high' : 'medium'}`;
+        link.href = alert.targetLink || 'dashboard.html';
+
+        const titleEl = document.createElement('strong');
+        titleEl.textContent = alert.title || 'Store Alert';
+
+        const msgEl = document.createElement('div');
+        msgEl.className = 'metric-sub';
+        msgEl.textContent = alert.message || '';
+
+        link.appendChild(titleEl);
+        link.appendChild(msgEl);
+        container.appendChild(link);
+      }
+    }
+
+    function buildQueryString() {
+      const preset = presetEl.value;
+      if (preset === 'custom' && startEl.value && endEl.value) {
+        return `?startDate=${encodeURIComponent(startEl.value)}&endDate=${encodeURIComponent(endEl.value)}`;
+      }
+      return `?days=${encodeURIComponent(preset === 'custom' ? '7' : preset)}`;
+    }
+
+    async function loadDashboardData() {
+      showBanner('loading', 'Loading store dashboard metrics...');
+      try {
+        const stats = await Api.get('/reports/dashboard' + buildQueryString());
+        if (!stats) {
+          throw new Error('Empty dashboard response');
+        }
+
+        document.getElementById('kpi-today-sales').textContent = formatCurrency(stats.todayNetSales ?? stats.todaySales);
+        document.getElementById('kpi-today-gross-sales').textContent = `Gross: ${formatCurrency(stats.todayGrossSales)}`;
+        document.getElementById('kpi-today-orders').textContent = String(stats.todayOrdersCount ?? 0);
+        document.getElementById('kpi-today-aov').textContent = `AOV: ${formatCurrency(stats.aov)}`;
+        const fullRef = stats.fullyRefundedOrders ?? 0;
+        const partRef = stats.partiallyRefundedOrders ?? 0;
+        const popLabel = stats.aovPopulationLabel || 'Non-cancelled, non-voided orders';
+        document.getElementById('kpi-aov-note').textContent = `${popLabel} (Full Ref: ${fullRef}, Partial: ${partRef})`;
+
+        document.getElementById('kpi-period-net-sales').textContent = formatCurrency(stats.periodNetSales);
+        document.getElementById('kpi-period-gross-sales').textContent = `Gross: ${formatCurrency(stats.periodGrossSales)}`;
+
+        if (stats.cogsAvailable) {
+          document.getElementById('kpi-net-profit').textContent = formatCurrency(stats.netProfit);
+          document.getElementById('kpi-gross-profit').textContent = `Gross Profit: ${formatCurrency(stats.grossProfit)} | COGS: ${formatCurrency(stats.cogs)}`;
+          document.getElementById('kpi-cogs-note').textContent = `Period Expenses: ${formatCurrency(stats.periodExpenses)}`;
+        } else {
+          document.getElementById('kpi-net-profit').textContent = 'Unavailable';
+          document.getElementById('kpi-gross-profit').textContent = 'Gross Profit: Unavailable';
+          document.getElementById('kpi-cogs-note').textContent = stats.cogsUnavailableReason || 'Missing historical cost snapshot';
+        }
+
+        document.getElementById('kpi-total-products').textContent = String(stats.totalProducts ?? 0);
+        document.getElementById('kpi-low-stock').textContent = String(stats.lowStockCount ?? 0);
+        document.getElementById('kpi-out-of-stock').textContent = String(stats.outOfStockCount ?? 0);
+        document.getElementById('kpi-expiring').textContent = String(stats.expiringCount ?? 0);
+        document.getElementById('kpi-month-expenses').textContent = `Month Expenses: ${formatCurrency(stats.monthExpenses)}`;
+
+        if (stats.periodStartDate && stats.periodEndDate) {
+          document.getElementById('trend-range-label').textContent = `${stats.periodStartDate} to ${stats.periodEndDate}`;
+        }
+
+        renderRecentSales(stats.recentSales);
+        renderTopProducts(stats.topProducts);
+        renderSalesTrend(stats.salesTrend);
+        renderAlerts(stats.alerts);
+        hideBanner();
+      } catch (err) {
+        showBanner('error', `Failed to load dashboard metrics: ${err.message || 'Network or server error'}`, true);
+      }
+    }
+
+    presetEl.addEventListener('change', () => {
+      const isCustom = presetEl.value === 'custom';
+      startEl.style.display = isCustom ? 'inline-block' : 'none';
+      endEl.style.display = isCustom ? 'inline-block' : 'none';
+      applyBtn.style.display = isCustom ? 'inline-block' : 'none';
+      if (!isCustom) {
+        loadDashboardData();
+      }
+    });
+
+    applyBtn.addEventListener('click', loadDashboardData);
+    retryBtn.addEventListener('click', loadDashboardData);
 
     loadDashboardData();
   </script>

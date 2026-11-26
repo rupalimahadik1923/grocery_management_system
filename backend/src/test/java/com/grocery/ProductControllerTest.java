@@ -2,9 +2,7 @@ package com.grocery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grocery.model.*;
-import com.grocery.repository.ProductRepository;
-import com.grocery.repository.StoreRepository;
-import com.grocery.repository.UserRepository;
+import com.grocery.repository.*;
 import com.grocery.security.JwtTokenProvider;
 import com.grocery.security.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,6 +49,18 @@ class ProductControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private SaleRepository saleRepository;
+
+    @Autowired
+    private PurchaseOrderRepository purchaseOrderRepository;
+
+    @Autowired
+    private InventoryBatchRepository inventoryBatchRepository;
+
+    @Autowired
+    private InventoryTransactionRepository inventoryTransactionRepository;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -55,6 +70,9 @@ class ProductControllerTest {
     private Store storeB;
     private String tokenStoreA;
     private String tokenStoreB;
+    private String cashierTokenA;
+    private String managerTokenA;
+    private String invStaffTokenA;
 
     @BeforeEach
     void setUp() {
@@ -85,6 +103,51 @@ class ProductControllerTest {
         UsernamePasswordAuthenticationToken authA =
                 new UsernamePasswordAuthenticationToken(principalA, null, principalA.getAuthorities());
         tokenStoreA = jwtTokenProvider.generateToken(authA);
+
+        // Manager in Store A
+        User managerA = userRepository.save(new User(
+                "mgr_a_" + testSuffix,
+                passwordEncoder.encode("password123"),
+                "Manager A",
+                "mgrA_" + testSuffix + "@test.local",
+                "9800000011",
+                UserRole.STORE_MANAGER,
+                storeA.getId(),
+                storeA.getStoreCode()
+        ));
+        UserPrincipal principalMgrA = new UserPrincipal(managerA);
+        managerTokenA = jwtTokenProvider.generateToken(
+                new UsernamePasswordAuthenticationToken(principalMgrA, null, principalMgrA.getAuthorities()));
+
+        // Inventory Staff in Store A
+        User invStaffA = userRepository.save(new User(
+                "inv_a_" + testSuffix,
+                passwordEncoder.encode("password123"),
+                "Inv Staff A",
+                "invA_" + testSuffix + "@test.local",
+                "9800000012",
+                UserRole.INVENTORY_STAFF,
+                storeA.getId(),
+                storeA.getStoreCode()
+        ));
+        UserPrincipal principalInvA = new UserPrincipal(invStaffA);
+        invStaffTokenA = jwtTokenProvider.generateToken(
+                new UsernamePasswordAuthenticationToken(principalInvA, null, principalInvA.getAuthorities()));
+
+        // Cashier in Store A
+        User cashierA = userRepository.save(new User(
+                "cashier_a_" + testSuffix,
+                passwordEncoder.encode("password123"),
+                "Cashier A",
+                "cashierA_" + testSuffix + "@test.local",
+                "9800000013",
+                UserRole.CASHIER,
+                storeA.getId(),
+                storeA.getStoreCode()
+        ));
+        UserPrincipal principalCashierA = new UserPrincipal(cashierA);
+        cashierTokenA = jwtTokenProvider.generateToken(
+                new UsernamePasswordAuthenticationToken(principalCashierA, null, principalCashierA.getAuthorities()));
 
         // Create Store B
         storeB = storeRepository.save(new Store(
@@ -318,5 +381,540 @@ class ProductControllerTest {
                         .content(objectMapper.writeValueAsString(invalidProd)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
+    }
+
+    // =========================================================================
+    // AUD-04-CRIT-01: Product ID Ownership Protection Tests
+    // =========================================================================
+
+    @Test
+    @DisplayName("AUD-04-CRIT-01: Should ignore client-supplied ID and generate server-authoritative ID on creation")
+    void shouldGenerateServerIdAndIgnoreClientSuppliedIdOnCreation() throws Exception {
+        String fabricatedId = "malicious-client-id-" + UUID.randomUUID();
+        Product product = new Product();
+        product.setId(fabricatedId);
+        product.setName("Fabricated ID Item");
+        product.setSku("SKU-FAB-" + UUID.randomUUID().toString().substring(0, 6));
+        product.setCostPrice(30.0);
+        product.setSellingPrice(45.0);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(product)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").isNotEmpty())
+                .andExpect(jsonPath("$.data.id", not(equalTo(fabricatedId))))
+                .andExpect(jsonPath("$.data.storeId").value(storeA.getId()))
+                .andReturn();
+
+        String generatedId = objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Verify in MongoDB: document exists under server ID, fabricated ID does not exist
+        assertTrue(productRepository.findById(generatedId).isPresent());
+        assertFalse(productRepository.findById(fabricatedId).isPresent());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-01: Should prevent cross-tenant document overwrite when Store B supplies Store A product ID")
+    void shouldPreventCrossTenantDocumentOverwriteViaClientSuppliedId() throws Exception {
+        // 1. Store A creates Product A
+        Product originalProdA = new Product();
+        originalProdA.setName("Original Store A Golden Product");
+        originalProdA.setSku("SKU-ORIG-A-" + UUID.randomUUID().toString().substring(0, 6));
+        originalProdA.setCostPrice(100.0);
+        originalProdA.setSellingPrice(150.0);
+
+        MvcResult resA = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(originalProdA)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String idA = objectMapper.readTree(resA.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // 2. Store B maliciously attempts to create a product supplying idA
+        Product hijackingProd = new Product();
+        hijackingProd.setId(idA); // Attempt to overwrite Store A's document
+        hijackingProd.setName("Hijacked Store B Name");
+        hijackingProd.setSku("SKU-HIJACK-" + UUID.randomUUID().toString().substring(0, 6));
+        hijackingProd.setCostPrice(1.0);
+        hijackingProd.setSellingPrice(2.0);
+
+        MvcResult resB = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(hijackingProd)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String idB = objectMapper.readTree(resB.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // 3. Assertions:
+        // - Store B was assigned a NEW ID, distinct from idA
+        assertNotEquals(idA, idB);
+
+        // - Store A's product remains 100% unchanged in Store A
+        Product preservedA = productRepository.findByStoreIdAndId(storeA.getId(), idA).orElseThrow();
+        assertEquals("Original Store A Golden Product", preservedA.getName());
+        assertEquals(storeA.getId(), preservedA.getStoreId());
+        assertEquals(150.0, preservedA.getSellingPrice());
+
+        // - Store B's product is in Store B
+        Product createdB = productRepository.findByStoreIdAndId(storeB.getId(), idB).orElseThrow();
+        assertEquals("Hijacked Store B Name", createdB.getName());
+        assertEquals(storeB.getId(), createdB.getStoreId());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-01: Should enforce authenticated store ownership over client-supplied storeId")
+    void shouldEnforceAuthenticatedStoreOwnershipOverClientSuppliedStoreId() throws Exception {
+        Product prod = new Product();
+        prod.setStoreId(storeB.getId()); // Maliciously claim Store B
+        prod.setName("Spoofed Store Item");
+        prod.setSku("SKU-SPOOF-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.storeId").value(storeA.getId()));
+    }
+
+    // =========================================================================
+    // AUD-04-CRIT-02: Safe Product Deletion & Archival Tests
+    // =========================================================================
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should physically delete product if it has NO historical references")
+    void shouldSafelyPhysicallyDeleteUnreferencedProduct() throws Exception {
+        Product prod = new Product();
+        prod.setName("Ephemeral Item");
+        prod.setSku("SKU-EPH-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(15.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Delete unreferenced product
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("deleted successfully")));
+
+        // Verify document is physically deleted
+        assertTrue(productRepository.findByStoreIdAndId(storeA.getId(), id).isEmpty());
+        mockMvc.perform(get("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should archive product instead of physically deleting if historical sales exist")
+    void shouldArchiveProductWithHistoricalSaleReferencesInsteadOfDeleting() throws Exception {
+        // 1. Create Product
+        Product prod = new Product();
+        prod.setName("Historically Sold Item");
+        prod.setSku("SKU-SOLD-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(20.0);
+        prod.setSellingPrice(30.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // 2. Create historical Sale referencing this product
+        Sale sale = new Sale();
+        sale.setStoreId(storeA.getId());
+        sale.setReceiptNumber("REC-" + UUID.randomUUID().toString().substring(0, 8));
+        sale.setSubtotal(30.0);
+        sale.setGrandTotal(30.0);
+        sale.setStatus("COMPLETED");
+        Sale.SaleItem saleItem = new Sale.SaleItem(id, prod.getName(), prod.getSku(), 30.0, 1.0, 5.0);
+        sale.setItems(List.of(saleItem));
+        saleRepository.save(sale);
+
+        // 3. Attempt to delete product
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("archived")));
+
+        // 4. Verify product STILL exists in MongoDB with status ARCHIVED
+        Product archived = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals("ARCHIVED", archived.getStatus());
+
+        // 5. Verify product is still readable via GET /{id} for historical workflows
+        mockMvc.perform(get("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ARCHIVED"));
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should archive product with historical PurchaseOrder references")
+    void shouldArchiveProductWithHistoricalPurchaseReferences() throws Exception {
+        Product prod = new Product();
+        prod.setName("Historically Purchased Item");
+        prod.setSku("SKU-PURCH-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(50.0);
+        prod.setSellingPrice(70.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Create PO referencing this product
+        PurchaseOrder po = new PurchaseOrder();
+        po.setStoreId(storeA.getId());
+        po.setOrderNumber("PO-TEST-" + UUID.randomUUID().toString().substring(0, 6));
+        po.setStatus("RECEIVED");
+        PurchaseOrder.PurchaseOrderItem poItem = new PurchaseOrder.PurchaseOrderItem(id, prod.getName(), 10.0, 50.0);
+        po.setItems(List.of(poItem));
+        purchaseOrderRepository.save(po);
+
+        // Delete product -> must archive
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("archived")));
+
+        Product archived = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals("ARCHIVED", archived.getStatus());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should archive product with historical InventoryBatch references")
+    void shouldArchiveProductWithHistoricalInventoryBatchReferences() throws Exception {
+        Product prod = new Product();
+        prod.setName("Batched Item");
+        prod.setSku("SKU-BATCH-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(40.0);
+        prod.setSellingPrice(60.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Create Batch referencing product
+        InventoryBatch batch = new InventoryBatch(id, prod.getName(), "BATCH-01", "SUPP-01", "Supplier 1",
+                LocalDate.now(), LocalDate.now().plusMonths(6), 50.0, 50.0, 40.0);
+        batch.setStoreId(storeA.getId());
+        inventoryBatchRepository.save(batch);
+
+        // Delete product -> must archive
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("archived")));
+
+        Product archived = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals("ARCHIVED", archived.getStatus());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should archive product with historical InventoryTransaction references")
+    void shouldArchiveProductWithHistoricalInventoryTransactionReferences() throws Exception {
+        Product prod = new Product();
+        prod.setName("Transacted Item");
+        prod.setSku("SKU-TX-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(15.0);
+        prod.setSellingPrice(25.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Create Inventory Transaction
+        InventoryTransaction tx = new InventoryTransaction(
+                id, prod.getName(), "ADJUSTMENT", 5.0, 15.0, "ADJUSTMENT", "REF-01", "admin", "audit stock");
+        tx.setStoreId(storeA.getId());
+        inventoryTransactionRepository.save(tx);
+
+        // Delete product -> must archive
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("archived")));
+
+        Product archived = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals("ARCHIVED", archived.getStatus());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should be safe and idempotent on repeated deletion of an archived product")
+    void shouldBeSafeAndIdempotentOnRepeatedDeletionOfArchivedProduct() throws Exception {
+        Product prod = new Product();
+        prod.setName("Idempotent Archive Item");
+        prod.setSku("SKU-IDEM-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Attach transaction
+        InventoryTransaction tx = new InventoryTransaction(
+                id, prod.getName(), "ADJUSTMENT", 1.0, 1.0, "ADJUSTMENT", "REF-02", "admin", "test");
+        tx.setStoreId(storeA.getId());
+        inventoryTransactionRepository.save(tx);
+
+        // 1st Delete -> archives
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("archived")));
+
+        // 2nd Delete -> idempotent success
+        mockMvc.perform(delete("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("already archived")));
+
+        // Product remains ARCHIVED
+        assertEquals("ARCHIVED", productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow().getStatus());
+    }
+
+    @Test
+    @DisplayName("AUD-04-CRIT-02: Should strictly reject sale of an archived product")
+    void shouldStrictlyRejectSaleOfArchivedProduct() throws Exception {
+        Product prod = new Product();
+        prod.setName("Archived No-Sale Item");
+        prod.setSku("SKU-NOSALE-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Manually archive product
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "ARCHIVED"))))
+                .andExpect(status().isOk());
+
+        // Attempt Sale with archived product
+        Sale sale = new Sale();
+        sale.setSubtotal(20.0);
+        sale.setGrandTotal(20.0);
+        Sale.SaleItem item = new Sale.SaleItem();
+        item.setProductId(id);
+        item.setQuantity(1.0);
+        item.setUnitPrice(20.0);
+        sale.setItems(List.of(item));
+
+        mockMvc.perform(post("/api/v1/sales")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sale)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("cannot be sold")));
+    }
+
+    // =========================================================================
+    // AUD-04-HIGH-02: Product Status Endpoint RBAC & Validation Tests
+    // =========================================================================
+
+    @Test
+    @DisplayName("AUD-04-HIGH-02: Should reject unauthenticated status update with 401")
+    void shouldRejectUnauthenticatedStatusUpdate() throws Exception {
+        mockMvc.perform(patch("/api/v1/products/any-id/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INACTIVE"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("AUD-04-HIGH-02: Should block CASHIER role from updating product status with 403 Forbidden")
+    void shouldBlockCashierRoleFromUpdatingProductStatus() throws Exception {
+        Product prod = new Product();
+        prod.setName("Protected Status Item");
+        prod.setSku("SKU-PROT-ST-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Cashier attempts status patch -> 403 Forbidden
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + cashierTokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INACTIVE"))))
+                .andExpect(status().isForbidden());
+
+        // Verify status remains ACTIVE
+        assertEquals("ACTIVE", productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow().getStatus());
+    }
+
+    @Test
+    @DisplayName("AUD-04-HIGH-02: Should permit ADMIN, STORE_MANAGER, and INVENTORY_STAFF to update product status")
+    void shouldPermitPrivilegedRolesToUpdateProductStatus() throws Exception {
+        Product prod = new Product();
+        prod.setName("Multi-Role Status Item");
+        prod.setSku("SKU-MROLE-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // 1. ADMIN sets INACTIVE
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INACTIVE"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("INACTIVE"));
+
+        // 2. STORE_MANAGER sets ACTIVE
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + managerTokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "ACTIVE"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+
+        // 3. INVENTORY_STAFF sets ARCHIVED
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + invStaffTokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "ARCHIVED"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ARCHIVED"));
+    }
+
+    @Test
+    @DisplayName("AUD-04-HIGH-02: Should reject invalid status values with 400 Bad Request")
+    void shouldRejectInvalidStatusValues() throws Exception {
+        Product prod = new Product();
+        prod.setName("Validate Status Item");
+        prod.setSku("SKU-VAL-ST-" + UUID.randomUUID().toString().substring(0, 6));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Invalid status string
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "CORRUPTED_STATUS"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("Invalid status")));
+
+        // Empty status string
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "   "))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("Status value is required")));
+    }
+
+    @Test
+    @DisplayName("AUD-04-HIGH-02: Should block cross-tenant status update with 404 Not Found")
+    void shouldBlockCrossTenantStatusUpdate() throws Exception {
+        Product prodA = new Product();
+        prodA.setName("Store A Status Prod");
+        prodA.setSku("SKU-ST-A-" + UUID.randomUUID().toString().substring(0, 6));
+        prodA.setCostPrice(10.0);
+        prodA.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prodA)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String idA = objectMapper.readTree(res.getResponse().getContentAsString())
+                .path("data").path("id").asText();
+
+        // Store B tries to toggle Store A product status
+        mockMvc.perform(patch("/api/v1/products/" + idA + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INACTIVE"))))
+                .andExpect(status().isNotFound());
+
+        // Store A product is still ACTIVE
+        assertEquals("ACTIVE", productRepository.findByStoreIdAndId(storeA.getId(), idA).orElseThrow().getStatus());
     }
 }

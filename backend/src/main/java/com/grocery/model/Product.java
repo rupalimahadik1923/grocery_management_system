@@ -39,7 +39,7 @@ public class Product {
     private double minStockLevel = 10.0;
     private double taxRate = 5.0; // GST %
     private String description;
-    private String status = "ACTIVE"; // ACTIVE, INACTIVE
+    private String status = "ACTIVE"; // ACTIVE, INACTIVE, ARCHIVED
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();

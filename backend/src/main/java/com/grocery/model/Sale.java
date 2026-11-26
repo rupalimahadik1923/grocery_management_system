@@ -1,18 +1,33 @@
 package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Document(collection = "sales")
+@CompoundIndexes({
+    @CompoundIndex(name = "storeId_createdAt_idx", def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(name = "storeId_receiptNumber_idx", def = "{'storeId': 1, 'receiptNumber': 1}")
+})
 public class Sale {
 
     @Id
     private String id;
+
+    @Indexed
+    private String storeId;
 
     @Indexed(unique = true)
     private String receiptNumber;
@@ -38,11 +53,42 @@ public class Sale {
     private String customerName = "Walk-in Customer";
 
     private String status = "COMPLETED"; // COMPLETED, REFUNDED, PARTIALLY_RETURNED
+    private double refundedTotal = 0.0;
+    private double pendingRefundTotal = 0.0;
+    private Map<String, Double> activeReservations = new HashMap<>();
+    private Map<String, ReservationMetadata> reservationMetadata = new HashMap<>();
+    private Map<String, Double> itemReturnedQty = new HashMap<>();
+    private Map<String, Double> itemPendingReturnQty = new HashMap<>();
+    private Set<String> appliedSettlementIds = new HashSet<>();
+
+    public static class ReservationMetadata {
+        private String status = "RESERVED"; // RESERVED, LINKED, RECOVERY_CLAIMED, RELEASED
+        private long createdAtEpochMs = System.currentTimeMillis();
+        private Map<String, Double> itemQuantities = new HashMap<>();
+
+        public ReservationMetadata() {}
+
+        public ReservationMetadata(String status, long createdAtEpochMs, Map<String, Double> itemQuantities) {
+            this.status = status;
+            this.createdAtEpochMs = createdAtEpochMs;
+            this.itemQuantities = itemQuantities != null ? itemQuantities : new HashMap<>();
+        }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+        public long getCreatedAtEpochMs() { return createdAtEpochMs; }
+        public void setCreatedAtEpochMs(long createdAtEpochMs) { this.createdAtEpochMs = createdAtEpochMs; }
+        public Map<String, Double> getItemQuantities() { return itemQuantities; }
+        public void setItemQuantities(Map<String, Double> itemQuantities) { this.itemQuantities = itemQuantities; }
+    }
 
     @Indexed
     private LocalDateTime createdAt = LocalDateTime.now();
+    @Indexed
+    private Instant createdAtInstant;
 
     public static class SaleItem {
+        private String saleItemId = UUID.randomUUID().toString();
         private String productId;
         private String productName;
         private String sku;
@@ -50,6 +96,7 @@ public class Sale {
         private double quantity;
         private double taxRate;
         private double lineTotal;
+        private Double costPrice; // Historical cost snapshot at time of sale (nullable for legacy records)
 
         public SaleItem() {}
 
@@ -62,6 +109,9 @@ public class Sale {
             this.taxRate = taxRate;
             this.lineTotal = unitPrice * quantity;
         }
+
+        public String getSaleItemId() { return saleItemId; }
+        public void setSaleItemId(String saleItemId) { this.saleItemId = saleItemId; }
 
         public String getProductId() { return productId; }
         public void setProductId(String productId) { this.productId = productId; }
@@ -83,6 +133,9 @@ public class Sale {
 
         public double getLineTotal() { return lineTotal; }
         public void setLineTotal(double lineTotal) { this.lineTotal = lineTotal; }
+
+        public Double getCostPrice() { return costPrice; }
+        public void setCostPrice(Double costPrice) { this.costPrice = costPrice; }
     }
 
     public Sale() {}
@@ -90,6 +143,9 @@ public class Sale {
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getReceiptNumber() { return receiptNumber; }
     public void setReceiptNumber(String receiptNumber) { this.receiptNumber = receiptNumber; }
@@ -142,6 +198,30 @@ public class Sale {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public double getRefundedTotal() { return refundedTotal; }
+    public void setRefundedTotal(double refundedTotal) { this.refundedTotal = refundedTotal; }
+
+    public double getPendingRefundTotal() { return pendingRefundTotal; }
+    public void setPendingRefundTotal(double pendingRefundTotal) { this.pendingRefundTotal = pendingRefundTotal; }
+
+    public Map<String, Double> getActiveReservations() { return activeReservations; }
+    public void setActiveReservations(Map<String, Double> activeReservations) { this.activeReservations = activeReservations; }
+
+    public Map<String, ReservationMetadata> getReservationMetadata() { return reservationMetadata; }
+    public void setReservationMetadata(Map<String, ReservationMetadata> reservationMetadata) { this.reservationMetadata = reservationMetadata; }
+
+    public Map<String, Double> getItemReturnedQty() { return itemReturnedQty; }
+    public void setItemReturnedQty(Map<String, Double> itemReturnedQty) { this.itemReturnedQty = itemReturnedQty; }
+
+    public Map<String, Double> getItemPendingReturnQty() { return itemPendingReturnQty; }
+    public void setItemPendingReturnQty(Map<String, Double> itemPendingReturnQty) { this.itemPendingReturnQty = itemPendingReturnQty; }
+
+    public Set<String> getAppliedSettlementIds() { return appliedSettlementIds; }
+    public void setAppliedSettlementIds(Set<String> appliedSettlementIds) { this.appliedSettlementIds = appliedSettlementIds; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Instant getCreatedAtInstant() { return createdAtInstant; }
+    public void setCreatedAtInstant(Instant createdAtInstant) { this.createdAtInstant = createdAtInstant; }
 }

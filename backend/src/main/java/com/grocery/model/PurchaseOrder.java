@@ -1,6 +1,7 @@
 package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -10,10 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "purchase_orders")
+@CompoundIndex(name = "storeId_status_createdAt_idx", def = "{'storeId': 1, 'status': 1, 'createdAt': -1}")
 public class PurchaseOrder {
 
     @Id
     private String id;
+
+    @Indexed
+    private String storeId;
 
     @Indexed(unique = true)
     private String orderNumber;
@@ -84,6 +89,9 @@ public class PurchaseOrder {
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getOrderNumber() { return orderNumber; }
     public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }

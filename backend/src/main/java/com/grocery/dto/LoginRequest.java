@@ -11,6 +11,7 @@ public class LoginRequest {
     private String password;
 
     private String storeCode; // Optional for admin login, required for staff multi-tenant login
+    private String portalMode; // Optional UI portal indicator ("STAFF" or "OWNER")
 
     public LoginRequest() {}
 
@@ -33,4 +34,7 @@ public class LoginRequest {
 
     public String getStoreCode() { return storeCode; }
     public void setStoreCode(String storeCode) { this.storeCode = storeCode; }
+
+    public String getPortalMode() { return portalMode; }
+    public void setPortalMode(String portalMode) { this.portalMode = portalMode; }
 }

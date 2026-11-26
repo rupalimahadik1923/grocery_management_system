@@ -40,3 +40,10 @@ buildNumber.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# Node / Tests
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+

@@ -10,4 +10,8 @@ import java.util.List;
 public interface InventoryTransactionRepository extends MongoRepository<InventoryTransaction, String> {
     List<InventoryTransaction> findTop50ByOrderByCreatedAtDesc();
     List<InventoryTransaction> findByProductIdOrderByCreatedAtDesc(String productId);
+
+    // Tenant-scoped queries
+    List<InventoryTransaction> findTop50ByStoreIdOrderByCreatedAtDesc(String storeId);
+    boolean existsByStoreIdAndProductId(String storeId, String productId);
 }

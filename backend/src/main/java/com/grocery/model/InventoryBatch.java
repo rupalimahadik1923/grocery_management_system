@@ -2,6 +2,7 @@ package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -9,11 +10,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(collection = "inventory_batches")
-@CompoundIndex(name = "prod_expiry_idx", def = "{'productId': 1, 'expiryDate': 1}")
+@CompoundIndexes({
+    @CompoundIndex(name = "prod_expiry_idx", def = "{'productId': 1, 'expiryDate': 1}"),
+    @CompoundIndex(name = "storeId_expiry_status_idx", def = "{'storeId': 1, 'status': 1, 'expiryDate': 1}")
+})
 public class InventoryBatch {
 
     @Id
     private String id;
+
+    @Indexed
+    private String storeId;
 
     @Indexed
     private String productId;
@@ -57,6 +64,9 @@ public class InventoryBatch {
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getProductId() { return productId; }
     public void setProductId(String productId) { this.productId = productId; }

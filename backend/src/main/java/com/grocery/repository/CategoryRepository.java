@@ -12,4 +12,7 @@ public interface CategoryRepository extends MongoRepository<Category, String> {
     Optional<Category> findByName(String name);
     List<Category> findByActiveOrderByDisplayOrderAsc(boolean active);
     boolean existsByName(String name);
+    List<Category> findByStoreId(String storeId);
+    Optional<Category> findByStoreIdAndId(String storeId, String id);
+    boolean existsByNameAndStoreId(String name, String storeId);
 }

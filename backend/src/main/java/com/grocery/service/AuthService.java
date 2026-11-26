@@ -12,6 +12,7 @@ import com.grocery.repository.UserRepository;
 import com.grocery.security.JwtTokenProvider;
 import com.grocery.security.UserPrincipal;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -62,9 +63,15 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(authUsername, loginRequest.getPassword())
         );
 
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+        // Enforce Store Admin portal restriction when portalMode=OWNER
+        if ("OWNER".equalsIgnoreCase(loginRequest.getPortalMode()) && userPrincipal.getRole() != UserRole.ADMIN) {
+            throw new BadCredentialsException("Store Admin login is restricted to Store Admin accounts");
+        }
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
         String storeId = userPrincipal.getStoreId();
         String storeCode = userPrincipal.getStoreCode();
@@ -73,8 +80,12 @@ public class AuthService {
         if (storeCode != null) {
             Optional<Store> storeOpt = storeRepository.findByStoreCode(storeCode);
             if (storeOpt.isPresent()) {
-                storeName = storeOpt.get().getStoreName();
-                storeId = storeOpt.get().getId();
+                Store store = storeOpt.get();
+                if (store.getStatus() != null && !"ACTIVE".equalsIgnoreCase(store.getStatus())) {
+                    throw new BadCredentialsException("Store account is suspended or inactive");
+                }
+                storeName = store.getStoreName();
+                storeId = store.getId();
             }
         }
 
@@ -97,8 +108,8 @@ public class AuthService {
                 ? req.getStoreCode().toLowerCase().trim().replaceAll("[^a-z0-9_-]", "") 
                 : "";
 
-        if (storeCode.isEmpty()) {
-            throw new IllegalArgumentException("Store code must contain alphanumeric characters.");
+        if (storeCode.length() < 2) {
+            throw new IllegalArgumentException("Store code must be at least 2 alphanumeric characters.");
         }
 
         if (storeRepository.existsByStoreCode(storeCode)) {
@@ -114,6 +125,23 @@ public class AuthService {
             throw new IllegalArgumentException("Email '" + ownerEmail + "' is already registered with another account. Please use a different email or log in.");
         }
 
+        // Validate & resolve adminUsername BEFORE persisting Store so failures never leave an orphaned Store
+        String adminUsername;
+        if (req.getAdminUsername() != null && !req.getAdminUsername().trim().isEmpty()) {
+            adminUsername = req.getAdminUsername().trim().toLowerCase().replaceAll("[^a-z0-9_.-]", "");
+            if (adminUsername.isEmpty()) {
+                throw new IllegalArgumentException("Admin username must contain valid characters.");
+            }
+            if (userRepository.existsByUsername(adminUsername)) {
+                throw new IllegalArgumentException("Username '" + adminUsername + "' is already in use. Please choose another username.");
+            }
+        } else {
+            adminUsername = storeCode + "_admin";
+            if (userRepository.existsByUsername(adminUsername)) {
+                adminUsername = adminUsername + "_" + (System.currentTimeMillis() % 1000);
+            }
+        }
+
         // 1. Create Store Entity
         Store store = new Store(
                 storeCode,
@@ -127,20 +155,7 @@ public class AuthService {
         store.setGstin(req.getGstin());
         Store savedStore = storeRepository.save(store);
 
-        // 2. Create Store Admin Account
-        String adminUsername;
-        if (req.getAdminUsername() != null && !req.getAdminUsername().trim().isEmpty()) {
-            adminUsername = req.getAdminUsername().trim().toLowerCase().replaceAll("[^a-z0-9_.-]", "");
-            if (userRepository.existsByUsername(adminUsername)) {
-                throw new IllegalArgumentException("Username '" + adminUsername + "' is already in use. Please choose another username.");
-            }
-        } else {
-            adminUsername = storeCode + "_admin";
-            if (userRepository.existsByUsername(adminUsername)) {
-                adminUsername = adminUsername + "_" + (System.currentTimeMillis() % 1000);
-            }
-        }
-
+        // 2. Create Store Admin Account & Workspace Defaults (with compensating rollback)
         User adminUser = new User(
                 adminUsername,
                 passwordEncoder.encode(req.getPassword()),
@@ -151,28 +166,44 @@ public class AuthService {
                 savedStore.getId(),
                 storeCode
         );
-        userRepository.save(adminUser);
+        User savedAdmin = null;
+        StoreSettings savedSettings = null;
+        java.util.List<Category> savedCategories = new java.util.ArrayList<>();
+        try {
+            savedAdmin = userRepository.save(adminUser);
 
-        // 3. Create Store Settings
-        StoreSettings settings = new StoreSettings();
-        settings.setId("STORE_SETTINGS_" + savedStore.getId());
-        settings.setStoreId(savedStore.getId());
-        settings.setStoreName(savedStore.getStoreName());
-        settings.setCity(savedStore.getCity());
-        settings.setPhone(savedStore.getPhone());
-        settings.setEmail(ownerEmail);
-        settings.setAddress(req.getAddress() != null ? req.getAddress().trim() : "");
-        settings.setLegalName(savedStore.getStoreName() + " Pvt Ltd");
-        if (req.getGstin() != null) settings.setGstin(req.getGstin().trim());
-        storeSettingsRepository.save(settings);
+            // 3. Create Store Settings
+            StoreSettings settings = new StoreSettings();
+            settings.setId("STORE_SETTINGS_" + savedStore.getId());
+            settings.setStoreId(savedStore.getId());
+            settings.setStoreName(savedStore.getStoreName());
+            settings.setCity(savedStore.getCity());
+            settings.setPhone(savedStore.getPhone());
+            settings.setEmail(ownerEmail);
+            settings.setAddress(req.getAddress() != null ? req.getAddress().trim() : "");
+            settings.setLegalName(savedStore.getStoreName() + " Pvt Ltd");
+            if (req.getGstin() != null) settings.setGstin(req.getGstin().trim());
+            savedSettings = storeSettingsRepository.save(settings);
 
-        // 4. Initialize Starter Categories for this store
-        categoryRepository.save(new Category("Dairy & Eggs", "dairy", "🥛", "Fresh dairy, milk, butter, cheese", 1, savedStore.getId()));
-        categoryRepository.save(new Category("Fruits & Vegetables", "fruits-vegetables", "🍎", "Fresh farm-sourced produce", 2, savedStore.getId()));
-        categoryRepository.save(new Category("Bakery & Breads", "bakery", "🍞", "Fresh breads, buns, bakes", 3, savedStore.getId()));
-        categoryRepository.save(new Category("Staples & Grains", "staples", "🌾", "Rice, flour, pulses, oil", 4, savedStore.getId()));
-        categoryRepository.save(new Category("Beverages", "beverages", "🧃", "Juices, soft drinks, tea", 5, savedStore.getId()));
-        categoryRepository.save(new Category("Snacks & Munchies", "snacks", "🍿", "Chips, biscuits, chocolates", 6, savedStore.getId()));
+            // 4. Initialize Starter Categories for this store
+            savedCategories.add(categoryRepository.save(new Category("Dairy & Eggs", "dairy", "🥛", "Fresh dairy, milk, butter, cheese", 1, savedStore.getId())));
+            savedCategories.add(categoryRepository.save(new Category("Fruits & Vegetables", "fruits-vegetables", "🍎", "Fresh farm-sourced produce", 2, savedStore.getId())));
+            savedCategories.add(categoryRepository.save(new Category("Bakery & Breads", "bakery", "🍞", "Fresh breads, buns, bakes", 3, savedStore.getId())));
+            savedCategories.add(categoryRepository.save(new Category("Staples & Grains", "staples", "🌾", "Rice, flour, pulses, oil", 4, savedStore.getId())));
+            savedCategories.add(categoryRepository.save(new Category("Beverages", "beverages", "🧃", "Juices, soft drinks, tea", 5, savedStore.getId())));
+            savedCategories.add(categoryRepository.save(new Category("Snacks & Munchies", "snacks", "🍿", "Chips, biscuits, chocolates", 6, savedStore.getId())));
+        } catch (RuntimeException ex) {
+            try {
+                if (!savedCategories.isEmpty()) categoryRepository.deleteAll(savedCategories);
+                if (savedSettings != null) storeSettingsRepository.deleteById(savedSettings.getId());
+                if (savedAdmin != null) userRepository.deleteById(savedAdmin.getId());
+                storeRepository.deleteById(savedStore.getId());
+            } catch (RuntimeException cleanupEx) {
+                // Preserve original failure while avoiding silent masking
+                ex.addSuppressed(cleanupEx);
+            }
+            throw ex;
+        }
 
         // 5. Automatically Authenticate the new Store Admin
         Authentication authentication = authenticationManager.authenticate(
@@ -183,12 +214,12 @@ public class AuthService {
 
         return new LoginResponse(
                 jwt,
-                adminUser.getId(),
-                adminUser.getUsername(),
-                adminUser.getFullName(),
-                adminUser.getEmail(),
-                adminUser.getRole(),
-                adminUser.getStatus(),
+                savedAdmin.getId(),
+                savedAdmin.getUsername(),
+                savedAdmin.getFullName(),
+                savedAdmin.getEmail(),
+                savedAdmin.getRole(),
+                savedAdmin.getStatus(),
                 savedStore.getId(),
                 savedStore.getStoreCode(),
                 savedStore.getStoreName()

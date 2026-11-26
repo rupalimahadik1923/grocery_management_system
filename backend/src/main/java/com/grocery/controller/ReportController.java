@@ -1,10 +1,17 @@
 package com.grocery.controller;
 
+import com.grocery.dto.DashboardMetricsResponse;
 import com.grocery.model.*;
 import com.grocery.repository.*;
+import com.grocery.security.TenantContext;
+import com.grocery.service.DashboardService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -20,51 +27,43 @@ public class ReportController {
     private final ProductRepository productRepository;
     private final InventoryBatchRepository batchRepository;
     private final ExpenseRepository expenseRepository;
+    private final TenantContext tenantContext;
+    private final DashboardService dashboardService;
 
     public ReportController(SaleRepository saleRepository,
                             ProductRepository productRepository,
                             InventoryBatchRepository batchRepository,
-                            ExpenseRepository expenseRepository) {
+                            ExpenseRepository expenseRepository,
+                            TenantContext tenantContext,
+                            DashboardService dashboardService) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
         this.batchRepository = batchRepository;
         this.expenseRepository = expenseRepository;
+        this.tenantContext = tenantContext;
+        this.dashboardService = dashboardService;
     }
 
     @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> getDashboardMetrics() {
-        LocalDateTime startOfToday = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        LocalDateTime endOfToday = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-
-        List<Sale> todaySalesList = saleRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(startOfToday, endOfToday);
-        double todayTotal = todaySalesList.stream().mapToDouble(Sale::getGrandTotal).sum();
-
-        long totalProducts = productRepository.count();
-        long lowStockCount = productRepository.findLowStockProducts().size();
-
-        LocalDate now = LocalDate.now();
-        LocalDate in30Days = now.plusDays(30);
-        long expiringCount = batchRepository.findByExpiryDateBetweenAndStatus(now, in30Days, "ACTIVE").size();
-
-        double totalRevenue = saleRepository.findAll().stream().mapToDouble(Sale::getGrandTotal).sum();
-        double monthExpenses = expenseRepository.findAll().stream().mapToDouble(Expense::getAmount).sum();
-
-        Map<String, Object> metrics = new HashMap<>();
-        metrics.put("todaySales", todayTotal);
-        metrics.put("todayOrdersCount", todaySalesList.size());
-        metrics.put("totalProducts", totalProducts);
-        metrics.put("lowStockCount", lowStockCount);
-        metrics.put("expiringCount", expiringCount);
-        metrics.put("totalRevenue", totalRevenue);
-        metrics.put("monthExpenses", monthExpenses);
-        metrics.put("recentSales", saleRepository.findTop20ByOrderByCreatedAtDesc());
-
-        return ResponseEntity.ok(metrics);
+    @PreAuthorize("hasAnyRole('ADMIN','STORE_MANAGER','INVENTORY_STAFF')")
+    public ResponseEntity<?> getDashboardMetrics(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "7") int days) {
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            return ResponseEntity.badRequest()
+                    .body(com.grocery.dto.ApiResponse.error("endDate cannot be earlier than startDate"));
+        }
+        String storeId = tenantContext.requireStoreId(userDetails);
+        return ResponseEntity.ok(dashboardService.getDashboardMetrics(storeId, startDate, endDate, days));
     }
 
     @GetMapping("/sales")
-    public ResponseEntity<Map<String, Object>> getSalesReport() {
-        List<Sale> allSales = saleRepository.findAll();
+    @PreAuthorize("hasAnyRole('ADMIN','STORE_MANAGER')")
+    public ResponseEntity<Map<String, Object>> getSalesReport(@AuthenticationPrincipal UserDetails userDetails) {
+        String storeId = tenantContext.requireStoreId(userDetails);
+        List<Sale> allSales = saleRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
         double totalRevenue = allSales.stream().mapToDouble(Sale::getGrandTotal).sum();
         double totalDiscount = allSales.stream().mapToDouble(Sale::getDiscountAmount).sum();
         double totalTax = allSales.stream().mapToDouble(s -> s.getCgst() + s.getSgst()).sum();
@@ -79,11 +78,12 @@ public class ReportController {
     }
 
     @GetMapping("/profit-loss")
-    public ResponseEntity<Map<String, Object>> getProfitLoss() {
-        List<Sale> sales = saleRepository.findAll();
+    @PreAuthorize("hasAnyRole('ADMIN','STORE_MANAGER')")
+    public ResponseEntity<Map<String, Object>> getProfitLoss(@AuthenticationPrincipal UserDetails userDetails) {
+        String storeId = tenantContext.requireStoreId(userDetails);
+        List<Sale> sales = saleRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
         double revenue = sales.stream().mapToDouble(Sale::getGrandTotal).sum();
-        double expenses = expenseRepository.findAll().stream().mapToDouble(Expense::getAmount).sum();
-        // Estimated COGS (~70% of revenue in retail grocery)
+        double expenses = expenseRepository.findByStoreIdOrderByExpenseDateDesc(storeId).stream().mapToDouble(Expense::getAmount).sum();
         double cogs = revenue * 0.70;
         double grossProfit = revenue - cogs;
         double netProfit = grossProfit - expenses;
@@ -100,13 +100,17 @@ public class ReportController {
     }
 
     @GetMapping("/export/{type}")
-    public ResponseEntity<byte[]> exportCsv(@PathVariable String type) {
+    @PreAuthorize("hasAnyRole('ADMIN','STORE_MANAGER')")
+    public ResponseEntity<byte[]> exportCsv(
+            @PathVariable String type,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String storeId = tenantContext.requireStoreId(userDetails);
         StringBuilder csv = new StringBuilder();
         String filename = type + "_export.csv";
 
         if ("products".equalsIgnoreCase(type)) {
             csv.append("ID,SKU,Barcode,Name,Category,Unit,CostPrice,SellingPrice,Stock,MinStock,Status\n");
-            for (Product p : productRepository.findAll()) {
+            for (Product p : productRepository.findByStoreId(storeId)) {
                 csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.2f,%.2f,%.2f,%.2f,\"%s\"\n",
                         p.getId(), p.getSku(), p.getBarcode(), p.getName(), p.getCategoryName(),
                         p.getUnit(), p.getCostPrice(), p.getSellingPrice(), p.getCurrentStock(),
@@ -114,7 +118,7 @@ public class ReportController {
             }
         } else if ("sales".equalsIgnoreCase(type)) {
             csv.append("ReceiptNumber,Date,Cashier,CustomerPhone,ItemsCount,Subtotal,Discount,Tax,GrandTotal,PaymentMethod,Status\n");
-            for (Sale s : saleRepository.findAll()) {
+            for (Sale s : saleRepository.findByStoreIdOrderByCreatedAtDesc(storeId)) {
                 csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",%d,%.2f,%.2f,%.2f,%.2f,\"%s\",\"%s\"\n",
                         s.getReceiptNumber(), s.getCreatedAt(), s.getCashierName(), s.getCustomerPhone(),
                         s.getItems() != null ? s.getItems().size() : 0, s.getSubtotal(), s.getDiscountAmount(),
@@ -122,7 +126,7 @@ public class ReportController {
             }
         } else if ("expenses".equalsIgnoreCase(type)) {
             csv.append("ID,Date,Title,Category,Amount,PaymentMethod,VoucherRef,RecordedBy\n");
-            for (Expense e : expenseRepository.findAll()) {
+            for (Expense e : expenseRepository.findByStoreIdOrderByExpenseDateDesc(storeId)) {
                 csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",%.2f,\"%s\",\"%s\",\"%s\"\n",
                         e.getId(), e.getExpenseDate(), e.getTitle(), e.getCategory(),
                         e.getAmount(), e.getPaymentMethod(), e.getVoucherRef(), e.getRecordedBy()));

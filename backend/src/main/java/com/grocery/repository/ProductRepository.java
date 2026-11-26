@@ -23,6 +23,7 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 
     // Store-scoped query methods
     List<Product> findByStoreId(String storeId);
+    long countByStoreIdAndStatus(String storeId, String status);
     List<Product> findByStoreIdAndCategoryId(String storeId, String categoryId);
     List<Product> findByStoreIdAndStatus(String storeId, String status);
     Optional<Product> findByStoreIdAndId(String storeId, String id);
