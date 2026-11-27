@@ -218,6 +218,77 @@ public class DataSeeder implements CommandLineRunner {
         migrateCustomerPhoneIndex();
         migrateSupplierCodeIndex();
         migrateReturnIdempotencyIndex();
+        migrateSaleIdempotencyIndex();
+        migrateSaleReceiptNumberIndex();
+        migrateInventoryBatchNumberIndex();
+    }
+
+    private void migrateSaleReceiptNumberIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(Sale.class);
+            boolean hasLegacyGlobalReceiptIdx = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "receiptNumber".equals(idx.getName()) && idx.isUnique());
+            if (hasLegacyGlobalReceiptIdx) {
+                indexOps.dropIndex("receiptNumber");
+                logger.info("Dropped legacy global unique index 'receiptNumber' on sales collection.");
+            }
+            boolean hasNonUniqueCompoundIdx = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "storeId_receiptNumber_idx".equals(idx.getName()));
+            if (hasNonUniqueCompoundIdx) {
+                indexOps.dropIndex("storeId_receiptNumber_idx");
+                logger.info("Dropped legacy 'storeId_receiptNumber_idx' on sales collection.");
+            }
+            indexOps.ensureIndex(
+                    new CompoundIndexDefinition(new org.bson.Document("storeId", 1).append("receiptNumber", 1))
+                            .unique()
+                            .named("storeId_receiptNumber_unique_idx")
+            );
+            logger.info("Verified compound unique index on Sale collection: storeId_receiptNumber_unique_idx (storeId, receiptNumber)");
+        } catch (Exception ex) {
+            logger.warn("Could not migrate sale receiptNumber index: {}", ex.getMessage());
+        }
+    }
+
+    private void migrateInventoryBatchNumberIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(InventoryBatch.class);
+            List<InventoryBatch> all = mongoTemplate.findAll(InventoryBatch.class);
+            boolean hasMissingStore = all.stream().anyMatch(b -> b.getStoreId() == null || b.getStoreId().trim().isEmpty());
+            long distinctPairs = all.stream()
+                    .filter(b -> b.getStoreId() != null && b.getBatchNumber() != null)
+                    .map(b -> b.getStoreId() + "#" + b.getBatchNumber())
+                    .distinct().count();
+            long nonNullPairs = all.stream()
+                    .filter(b -> b.getStoreId() != null && b.getBatchNumber() != null)
+                    .count();
+
+            if (hasMissingStore || distinctPairs < nonNullPairs) {
+                logger.warn("Skipping InventoryBatch compound unique index migration: missing storeId or intra-store duplicate batchNumber detected.");
+                return;
+            }
+            indexOps.ensureIndex(
+                    new CompoundIndexDefinition(new org.bson.Document("storeId", 1).append("batchNumber", 1))
+                            .unique()
+                            .named("storeId_batchNumber_unique_idx")
+            );
+            logger.info("Verified compound unique index on InventoryBatch collection: storeId_batchNumber_unique_idx (storeId, batchNumber)");
+        } catch (Exception ex) {
+            logger.warn("InventoryBatch index migration warning: {}", ex.getMessage());
+        }
+    }
+
+    private void migrateSaleIdempotencyIndex() {
+        try {
+            var indexOps = mongoTemplate.indexOps(Sale.class);
+            boolean hasLegacyIdx = indexOps.getIndexInfo().stream()
+                    .anyMatch(idx -> "storeId_idempotencyKey_idx".equals(idx.getName()));
+            if (hasLegacyIdx) {
+                indexOps.dropIndex("storeId_idempotencyKey_idx");
+                logger.info("Dropped legacy sparse index 'storeId_idempotencyKey_idx' on sales collection.");
+            }
+        } catch (Exception ex) {
+            logger.warn("Could not migrate sale idempotency index: {}", ex.getMessage());
+        }
     }
 
     private void migrateReturnIdempotencyIndex() {

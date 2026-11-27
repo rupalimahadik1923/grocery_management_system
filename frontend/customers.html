@@ -10,43 +10,129 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Customers & Loyalty UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 900px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
     .metric-mini-val {
       font-size: 24px;
       font-weight: 800;
       color: var(--gray-900);
+      line-height: 1.15;
     }
-    .metric-mini-lbl {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 500;
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
     }
+    .metric-mini-icon.blue {
+      background: var(--accent-blue-light);
+      border-color: #bfdbfe;
+    }
+    .metric-mini-icon.amber {
+      background: var(--accent-amber-light);
+      border-color: #fde68a;
+    }
+
+    /* Filter Toolbar */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .tier-filter-select {
+      width: 185px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 20px;
+      font-size: 13.5px;
+    }
+    .btn-table-action {
+      height: 34px;
+      padding: 0 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -56,66 +142,71 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- Metrics Ribbon -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-cust">0</div>
               <div class="metric-mini-lbl">Registered Customers</div>
+              <div class="metric-mini-val" id="metric-total-cust">0</div>
             </div>
-            <div style="font-size: 30px;">👥</div>
+            <div class="metric-mini-icon blue">👥</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-points-pool" style="color: var(--primary-700);">0 pts</div>
               <div class="metric-mini-lbl">Active Loyalty Points Pool</div>
+              <div class="metric-mini-val" id="metric-points-pool" style="color: var(--primary-700);">0 pts</div>
             </div>
-            <div style="font-size: 30px;">🎁</div>
+            <div class="metric-mini-icon amber">🎁</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-lifetime-spend">₹0.00</div>
               <div class="metric-mini-lbl">Customer Lifetime Spend</div>
+              <div class="metric-mini-val" id="metric-lifetime-spend">₹0.00</div>
             </div>
-            <div style="font-size: 30px;">💰</div>
+            <div class="metric-mini-icon">💰</div>
           </div>
         </div>
 
         <!-- Filter Toolbar -->
         <div class="toolbar-container">
-          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
-            <input 
-              type="text" 
-              id="cust-search-input" 
-              class="form-control" 
-              style="max-width: 280px;" 
-              placeholder="Search by name, mobile, email..." 
-            />
-            <select id="cust-tier-filter" class="form-control" style="max-width: 160px;">
+          <div class="toolbar-filters">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="cust-search-input"
+                class="form-control"
+                placeholder="Search by name, mobile, email..."
+              />
+            </div>
+            <select id="cust-tier-filter" class="form-control tier-filter-select">
               <option value="ALL">All Loyalty Tiers</option>
               <option value="BRONZE">🥉 Bronze</option>
               <option value="SILVER">🥈 Silver</option>
               <option value="GOLD">🥇 Gold</option>
             </select>
           </div>
-          <button class="btn btn-primary" id="btn-add-cust">➕ Add New Customer</button>
+          <button type="button" class="btn btn-primary btn-toolbar" id="btn-add-cust">
+            <span class="btn-icon-circle">+</span>
+            <span>Add New Customer</span>
+          </button>
         </div>
 
         <!-- Customers Table -->
         <div class="table-container">
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
                 <th>Customer Name</th>
-                <th>Mobile Number</th>
+                <th style="white-space: nowrap;">Mobile Number</th>
                 <th>Email Address</th>
-                <th>Loyalty Tier</th>
-                <th>Points Balance</th>
-                <th>Orders Placed</th>
-                <th>Lifetime Spend (₹)</th>
+                <th style="text-align: center; white-space: nowrap;">Loyalty Tier</th>
+                <th style="text-align: right; white-space: nowrap;">Points Balance</th>
+                <th style="text-align: center; white-space: nowrap;">Orders</th>
+                <th style="text-align: right; white-space: nowrap;">Lifetime Spend (₹)</th>
                 <th>Address</th>
-                <th style="text-align: right;">Action</th>
+                <th style="text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
             <tbody id="customers-table-body">
@@ -134,38 +225,38 @@
 
   <!-- ADD / EDIT CUSTOMER MODAL -->
   <div class="modal-overlay" id="customer-modal">
-    <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-content" style="max-width: 520px;">
       <div class="modal-header">
         <h3 class="modal-title" id="cust-modal-title">Register Customer</h3>
-        <button class="modal-close-btn" id="close-cust-modal">&times;</button>
+        <button type="button" class="modal-close-btn" id="close-cust-modal">&times;</button>
       </div>
       <form id="customer-form">
         <div class="modal-body" style="padding: 20px 24px;">
           <input type="hidden" id="cust-id" />
 
           <div class="form-group">
-            <label class="form-label">Full Name *</label>
+            <label class="form-label" for="cust-name">Full Name *</label>
             <input type="text" id="cust-name" class="form-control" required placeholder="e.g. Rahul Sharma" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Phone Number (10 digits) *</label>
+              <label class="form-label" for="cust-phone">Phone Number (10 digits) *</label>
               <input type="text" id="cust-phone" class="form-control" required placeholder="9876543210" />
             </div>
             <div class="form-group">
-              <label class="form-label">Email Address</label>
+              <label class="form-label" for="cust-email">Email Address</label>
               <input type="email" id="cust-email" class="form-control" placeholder="customer@example.com" />
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Residential Area / Address</label>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="cust-address">Residential Area / Address</label>
             <textarea id="cust-address" class="form-control" rows="2" placeholder="Locality, City..."></textarea>
           </div>
         </div>
 
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-secondary" id="btn-cancel-cust">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-save-cust">Save Customer</button>
         </div>
@@ -185,6 +276,16 @@
     const tierFilter = document.getElementById('cust-tier-filter');
     const custModal = document.getElementById('customer-modal');
     const custForm = document.getElementById('customer-form');
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function loadCustomers() {
       try {
@@ -211,8 +312,8 @@
       const q = searchInput.value.toLowerCase().trim();
       const tier = tierFilter.value;
 
-      let filtered = customers.filter(c => {
-        const matchesQ = !q || 
+      const filtered = customers.filter(c => {
+        const matchesQ = !q ||
           (c.name && c.name.toLowerCase().includes(q)) ||
           (c.phone && c.phone.includes(q)) ||
           (c.email && c.email.toLowerCase().includes(q));
@@ -239,16 +340,16 @@
 
         return `
           <tr>
-            <td style="font-weight: 700; color: var(--gray-900);">${c.name}</td>
-            <td style="font-family: monospace; font-weight: 600;">${c.phone}</td>
-            <td style="color: var(--gray-600); font-size: 12px;">${c.email || '-'}</td>
-            <td>${tierBadge}</td>
-            <td style="font-weight: 700; color: var(--primary-700);">${c.loyaltyPoints || 0} pts</td>
-            <td>${c.ordersCount || 0}</td>
-            <td style="font-weight: 600;">₹${c.totalSpent?.toFixed(2) || '0.00'}</td>
-            <td style="font-size: 12px; color: var(--gray-600);">${c.address || '-'}</td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary btn-edit-cust" data-id="${c.id}" style="padding: 4px 10px; font-size: 12px;">✏️ Edit</button>
+            <td style="font-weight: 700; color: var(--gray-900);">${escapeHtml(c.name)}</td>
+            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; white-space: nowrap;">${escapeHtml(c.phone)}</td>
+            <td style="color: var(--gray-600); font-size: 13px;">${escapeHtml(c.email || '-')}</td>
+            <td style="text-align: center; white-space: nowrap;">${tierBadge}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--primary-700); white-space: nowrap;">${c.loyaltyPoints || 0} pts</td>
+            <td style="text-align: center; white-space: nowrap;">${c.ordersCount || 0}</td>
+            <td style="text-align: right; font-weight: 600; white-space: nowrap;">₹${Number(c.totalSpent || 0).toFixed(2)}</td>
+            <td style="font-size: 12.5px; color: var(--gray-600); max-width: 200px;">${escapeHtml(c.address || '-')}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button type="button" class="btn btn-secondary btn-table-action btn-edit-cust" data-id="${escapeHtml(c.id)}">✏️ Edit</button>
             </td>
           </tr>
         `;
@@ -326,7 +427,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

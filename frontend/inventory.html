@@ -10,43 +10,89 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Inventory & Batches UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 1100px) {
+      .metrics-bar {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+      }
+    }
+    @media (max-width: 640px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
     .metric-mini-val {
       font-size: 24px;
       font-weight: 800;
       color: var(--gray-900);
+      line-height: 1.15;
     }
-    .metric-mini-lbl {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 500;
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
+    }
+    .metric-mini-icon.blue {
+      background: var(--accent-blue-light);
+      border-color: #bfdbfe;
+    }
+    .metric-mini-icon.amber {
+      background: var(--accent-amber-light);
+      border-color: #fde68a;
+    }
+    .metric-mini-icon.rose {
+      background: var(--accent-rose-light);
+      border-color: #fecdd3;
     }
 
     /* Tabs Bar */
     .inventory-tabs {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       border-bottom: 2px solid var(--gray-200);
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
     .tab-btn {
-      padding: 12px 20px;
-      font-size: 14px;
+      padding: 12px 18px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--gray-600);
       background: none;
@@ -55,6 +101,9 @@
       border-bottom: 3px solid transparent;
       margin-bottom: -2px;
       transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
     .tab-btn:hover {
       color: var(--primary-700);
@@ -64,17 +113,78 @@
       border-bottom-color: var(--primary-600);
     }
 
+    /* Toolbars & Controls */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .filter-select {
+      width: 195px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 18px;
+      font-size: 13.5px;
+    }
+    .table-actions-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-table-action {
+      height: 34px;
+      padding: 0 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -89,73 +199,83 @@
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-stock-val">₹0.00</div>
               <div class="metric-mini-lbl">Inventory Valuation (Cost Basis)</div>
+              <div class="metric-mini-val" id="metric-stock-val">₹0.00</div>
             </div>
-            <div style="font-size: 30px;">💰</div>
+            <div class="metric-mini-icon">💰</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-units">0</div>
               <div class="metric-mini-lbl">Total Physical Units on Shelves</div>
+              <div class="metric-mini-val" id="metric-total-units">0</div>
             </div>
-            <div style="font-size: 30px;">📦</div>
+            <div class="metric-mini-icon blue">📦</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-low-count" style="color: var(--accent-amber);">0</div>
               <div class="metric-mini-lbl">Low Stock Reorder Alerts</div>
+              <div class="metric-mini-val" id="metric-low-count" style="color: var(--accent-amber);">0</div>
             </div>
-            <div style="font-size: 30px;">⚠️</div>
+            <div class="metric-mini-icon amber">⚠️</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-expiring-count" style="color: var(--accent-rose);">0</div>
               <div class="metric-mini-lbl">Batches Expiring (30 Days)</div>
+              <div class="metric-mini-val" id="metric-expiring-count" style="color: var(--accent-rose);">0</div>
             </div>
-            <div style="font-size: 30px;">⏳</div>
+            <div class="metric-mini-icon rose">⏳</div>
           </div>
         </div>
 
         <!-- Tab Navigation -->
         <div class="inventory-tabs">
-          <button class="tab-btn active" id="tab-stock-btn">📦 Stock Levels Overview</button>
-          <button class="tab-btn" id="tab-batches-btn">⏳ Batch & Expiry Tracker (FEFO)</button>
-          <button class="tab-btn" id="tab-movements-btn">📋 Stock Movement Audit Ledger</button>
+          <button type="button" class="tab-btn active" id="tab-stock-btn">📦 Stock Levels Overview</button>
+          <button type="button" class="tab-btn" id="tab-batches-btn">⏳ Batch &amp; Expiry Tracker (FEFO)</button>
+          <button type="button" class="tab-btn" id="tab-movements-btn">📋 Stock Movement Audit Ledger</button>
         </div>
 
         <!-- TAB 1: Stock Levels Overview -->
         <div id="tab-stock-content">
           <div class="toolbar-container">
-            <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
-              <input 
-                type="text" 
-                id="stock-search-input" 
-                class="form-control" 
-                style="max-width: 280px;" 
-                placeholder="Search SKU or item name..." 
-              />
-              <select id="stock-filter-threshold" class="form-control" style="max-width: 180px;">
+            <div class="toolbar-filters">
+              <div class="search-input-wrap">
+                <span class="search-icon">🔍</span>
+                <input
+                  type="text"
+                  id="stock-search-input"
+                  class="form-control"
+                  placeholder="Search SKU or item name..."
+                />
+              </div>
+              <select id="stock-filter-threshold" class="form-control filter-select">
                 <option value="ALL">All Stock Levels</option>
                 <option value="LOW">Low Stock Only</option>
                 <option value="OUT">Out of Stock Only</option>
                 <option value="HEALTHY">Healthy Stock Only</option>
               </select>
             </div>
-            <button class="btn btn-primary" id="btn-open-adjustment">⚡ Quick Stock Adjustment</button>
+            <div class="toolbar-actions">
+              <button type="button" class="btn btn-primary btn-toolbar" id="btn-open-restock">
+                <span class="btn-icon-circle">+</span>
+                <span>Restock / Stock In</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-toolbar" id="btn-open-adjustment">
+                <span>⚡ Quick Stock Adjustment</span>
+              </button>
+            </div>
           </div>
 
           <div class="table-container">
-            <table class="data-table">
+            <table class="table data-table">
               <thead>
                 <tr>
                   <th>Product Information</th>
                   <th>Category</th>
-                  <th>In-Stock Qty</th>
-                  <th>Min Threshold</th>
-                  <th>Stock Valuation</th>
-                  <th>Stock Health Status</th>
-                  <th style="text-align: right;">Action</th>
+                  <th style="text-align: right; white-space: nowrap;">In-Stock Qty</th>
+                  <th style="text-align: right; white-space: nowrap;">Min Threshold</th>
+                  <th style="text-align: right; white-space: nowrap;">Stock Valuation</th>
+                  <th style="text-align: center; white-space: nowrap;">Stock Health Status</th>
+                  <th style="text-align: right; white-space: nowrap;">Action</th>
                 </tr>
               </thead>
               <tbody id="stock-table-body">
@@ -171,29 +291,29 @@
             <div style="font-size: 14px; font-weight: 600; color: var(--gray-700);">
               First-Expired, First-Out (FEFO) Batches Tracking
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <span style="font-size: 12px; color: var(--gray-500);">Window:</span>
-              <select id="expiry-window-select" class="form-control" style="width: 150px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="font-size: 13px; font-weight: 600; color: var(--gray-500);">Expiry Window:</span>
+              <select id="expiry-window-select" class="form-control filter-select" style="width: 175px;">
                 <option value="15">Next 15 Days</option>
-                <option value="30" selected>Next 30 Days</option>
+                <option value="30">Next 30 Days</option>
                 <option value="60">Next 60 Days</option>
-                <option value="ALL">All Active Batches</option>
+                <option value="ALL" selected>All Active Batches</option>
               </select>
             </div>
           </div>
 
           <div class="table-container">
-            <table class="data-table">
+            <table class="table data-table">
               <thead>
                 <tr>
-                  <th>Batch Number</th>
+                  <th style="white-space: nowrap;">Batch Number</th>
                   <th>Product Name</th>
                   <th>Supplier</th>
-                  <th>Inward Date</th>
-                  <th>Expiry Date</th>
-                  <th>Units (Remaining / Initial)</th>
-                  <th>Cost per Unit</th>
-                  <th>Expiry Urgency</th>
+                  <th style="text-align: center; white-space: nowrap;">Inward Date</th>
+                  <th style="text-align: center; white-space: nowrap;">Expiry Date</th>
+                  <th style="text-align: center; white-space: nowrap;">Units (Rem / Init)</th>
+                  <th style="text-align: right; white-space: nowrap;">Cost / Unit</th>
+                  <th style="text-align: center; white-space: nowrap;">Expiry Urgency</th>
                 </tr>
               </thead>
               <tbody id="batches-table-body">
@@ -207,22 +327,22 @@
         <div id="tab-movements-content" style="display: none;">
           <div class="toolbar-container">
             <div style="font-size: 14px; font-weight: 600; color: var(--gray-700);">
-              Recent Stock Movement & Transaction Audit Trail
+              Recent Stock Movement &amp; Transaction Audit Trail
             </div>
-            <button class="btn btn-secondary" id="btn-refresh-tx">🔄 Refresh Log</button>
+            <button type="button" class="btn btn-secondary btn-toolbar" id="btn-refresh-tx">🔄 Refresh Log</button>
           </div>
 
           <div class="table-container">
-            <table class="data-table">
+            <table class="table data-table">
               <thead>
                 <tr>
-                  <th>Timestamp</th>
+                  <th style="white-space: nowrap;">Timestamp</th>
                   <th>Product</th>
-                  <th>Tx Type</th>
-                  <th>Quantity Delta</th>
-                  <th>Balance After</th>
+                  <th style="text-align: center; white-space: nowrap;">Tx Type</th>
+                  <th style="text-align: right; white-space: nowrap;">Qty Delta</th>
+                  <th style="text-align: right; white-space: nowrap;">Balance After</th>
                   <th>User / Cashier</th>
-                  <th>Reference #</th>
+                  <th style="white-space: nowrap;">Reference #</th>
                   <th>Reason / Remarks</th>
                 </tr>
               </thead>
@@ -283,6 +403,65 @@
     </div>
   </div>
 
+  <!-- RESTOCK / STOCK-IN MODAL -->
+  <div class="modal-overlay" id="restock-modal">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📦 Restock / Stock In</h3>
+        <button class="modal-close-btn" id="close-restock-modal">&times;</button>
+      </div>
+      <form id="restock-form">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <div class="form-group">
+            <label class="form-label" for="restock-product">Select Product *</label>
+            <select id="restock-product" class="form-control" required>
+              <option value="">Select product to restock...</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="restock-qty">Quantity to Add *</label>
+              <input type="number" step="0.01" min="0.01" id="restock-qty" class="form-control" required placeholder="e.g. 25" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="restock-cost">Purchase Cost / Unit (₹)</label>
+              <input type="number" step="0.01" min="0" id="restock-cost" class="form-control" placeholder="Uses product cost if blank" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="restock-supplier">Supplier (Optional)</label>
+              <select id="restock-supplier" class="form-control">
+                <option value="">Direct / No supplier</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="restock-expiry">Expiry Date (Optional)</label>
+              <input type="date" id="restock-expiry" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="restock-batch">Batch Number (Optional)</label>
+            <input type="text" id="restock-batch" class="form-control" placeholder="Auto-generated if left blank" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="restock-notes">Notes (Optional)</label>
+            <textarea id="restock-notes" class="form-control" rows="2" placeholder="Invoice #, delivery details, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-restock">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-restock">Confirm Restock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { Layout } from './js/layout.js';
     import { Api } from './js/api.js';
@@ -290,17 +469,42 @@
     Layout.init({ activePage: 'inventory', title: 'Inventory & Batches' });
 
     let products = [];
+    let suppliers = [];
     let batches = [];
     let transactions = [];
     let activeTab = 'stock';
+    let restockDeepLinkHandled = false;
+    let currentRestockIdempotencyKey = null;
 
     const stockTableBody = document.getElementById('stock-table-body');
     const batchesTableBody = document.getElementById('batches-table-body');
     const txTableBody = document.getElementById('tx-table-body');
     const searchInput = document.getElementById('stock-search-input');
     const filterThreshold = document.getElementById('stock-filter-threshold');
+    const expiryWindowSelect = document.getElementById('expiry-window-select');
     const adjModal = document.getElementById('adjustment-modal');
     const adjForm = document.getElementById('adjustment-form');
+    const restockModal = document.getElementById('restock-modal');
+    const restockForm = document.getElementById('restock-form');
+    const restockProductSelect = document.getElementById('restock-product');
+    const restockCostInput = document.getElementById('restock-cost');
+
+    function generateIdempotencyKey() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return 'rst-' + window.crypto.randomUUID();
+      }
+      return 'rst-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function escapeHtml(val) {
+      if (val === null || val === undefined) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // Tab Switching
     document.getElementById('tab-stock-btn').addEventListener('click', () => switchTab('stock'));
@@ -322,12 +526,37 @@
 
     async function loadData() {
       try {
-        const prodsRes = await Api.get('/products').catch(() => []);
+        const [prodsRes, expiringRes, supRes] = await Promise.all([
+          Api.get('/products').catch(() => []),
+          Api.get('/inventory/expiring?days=30').catch(() => []),
+          Api.get('/suppliers').catch(() => [])
+        ]);
         products = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
+        suppliers = Array.isArray(supRes) ? supRes : (supRes.data || []);
+        const expiringBatches = Array.isArray(expiringRes) ? expiringRes : (expiringRes.data || []);
+        document.getElementById('metric-expiring-count').textContent = expiringBatches.length;
 
         populateAdjDropdown();
+        populateRestockDropdowns();
         updateMetrics();
+
+        // Check for SKU / restock query parameters from external navigation (e.g. products catalog)
+        const urlParams = new URLSearchParams(window.location.search);
+        const skuParam = urlParams.get('sku');
+        if (skuParam && skuParam.trim() && !searchInput.value) {
+          searchInput.value = skuParam.trim();
+        }
+
         renderStockTable();
+
+        const restockParam = urlParams.get('restock');
+        if (!restockDeepLinkHandled && (restockParam === '1' || restockParam === 'true') && skuParam && skuParam.trim()) {
+          restockDeepLinkHandled = true;
+          const target = products.find(p => p.sku && p.sku.toLowerCase() === skuParam.trim().toLowerCase() && p.status !== 'ARCHIVED');
+          if (target) {
+            openRestockModal(target.id);
+          }
+        }
       } catch (err) {
         showToast('Error loading inventory data: ' + err.message, 'error');
       }
@@ -345,8 +574,19 @@
 
     function populateAdjDropdown() {
       const select = document.getElementById('adj-product');
+      const eligible = products.filter(p => p.status !== 'ARCHIVED');
       select.innerHTML = `<option value="">Select product to adjust...</option>` + 
-        products.map(p => `<option value="${p.id}">${p.name} (Current: ${p.currentStock} ${p.unit})</option>`).join('');
+        eligible.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (Current: ${Number(p.currentStock ?? 0)} ${escapeHtml(p.unit || '')})</option>`).join('');
+    }
+
+    function populateRestockDropdowns() {
+      const eligible = products.filter(p => p.status !== 'ARCHIVED');
+      restockProductSelect.innerHTML = `<option value="">Select product to restock...</option>` + 
+        eligible.map(p => `<option value="${escapeHtml(p.id)}" data-cost="${Number(p.costPrice ?? 0)}">${escapeHtml(p.name)} (Current: ${Number(p.currentStock ?? 0)} ${escapeHtml(p.unit || '')})</option>`).join('');
+
+      const supSelect = document.getElementById('restock-supplier');
+      supSelect.innerHTML = `<option value="">Direct / No supplier</option>` + 
+        suppliers.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
     }
 
     function renderStockTable() {
@@ -354,7 +594,7 @@
       const threshold = filterThreshold.value;
 
       let filtered = products.filter(p => {
-        const matchesQuery = !q || p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q));
+        const matchesQuery = !q || (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q));
         let matchesThreshold = true;
         if (threshold === 'LOW') matchesThreshold = p.currentStock <= p.minStockLevel && p.currentStock > 0;
         else if (threshold === 'OUT') matchesThreshold = p.currentStock <= 0;
@@ -375,33 +615,46 @@
       }
 
       stockTableBody.innerHTML = filtered.map(prod => {
-        const val = (prod.currentStock || 0) * (prod.costPrice || 0);
+        const stock = Number(prod.currentStock ?? 0);
+        const minStock = Number(prod.minStockLevel ?? 0);
+        const val = stock * Number(prod.costPrice ?? 0);
         let healthBadge = `<span class="badge badge-success">Healthy Stock</span>`;
-        if (prod.currentStock <= 0) {
+        if (stock <= 0) {
           healthBadge = `<span class="badge badge-danger">Out of Stock</span>`;
-        } else if (prod.currentStock <= prod.minStockLevel) {
+        } else if (stock <= minStock) {
           healthBadge = `<span class="badge badge-warning">Low Stock Warning</span>`;
         }
 
         return `
           <tr>
             <td>
-              <div style="font-weight: 600; color: var(--gray-900);">${prod.name}</div>
-              <div style="font-size: 11px; color: var(--gray-500);">SKU: ${prod.sku}</div>
+              <div style="font-weight: 600; color: var(--gray-900);">${escapeHtml(prod.name)}</div>
+              <div style="font-size: 11.5px; color: var(--gray-500);">SKU: ${escapeHtml(prod.sku)}</div>
             </td>
-            <td><span class="badge badge-neutral">${prod.categoryName || '-'}</span></td>
-            <td style="font-weight: 700;">${prod.currentStock} ${prod.unit}</td>
-            <td style="color: var(--gray-500);">${prod.minStockLevel} ${prod.unit}</td>
-            <td style="font-weight: 600; color: var(--primary-700);">₹${val.toFixed(2)}</td>
-            <td>${healthBadge}</td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary btn-quick-adj" data-id="${prod.id}" style="padding: 4px 10px; font-size: 12px;">
-                ⚡ Adjust
-              </button>
+            <td><span class="badge badge-neutral">${escapeHtml(prod.categoryName || '-')}</span></td>
+            <td style="text-align: right; font-weight: 700; white-space: nowrap;">${stock} ${escapeHtml(prod.unit || '')}</td>
+            <td style="text-align: right; color: var(--gray-500); white-space: nowrap;">${minStock} ${escapeHtml(prod.unit || '')}</td>
+            <td style="text-align: right; font-weight: 600; color: var(--primary-700); white-space: nowrap;">₹${val.toFixed(2)}</td>
+            <td style="text-align: center; white-space: nowrap;">${healthBadge}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              ${prod.status === 'ARCHIVED' ? '<span class="badge badge-neutral">Archived</span>' : `
+                <div class="table-actions-wrap">
+                  <button type="button" class="btn ${stock <= minStock ? 'btn-primary' : 'btn-secondary'} btn-table-action btn-quick-restock" data-id="${escapeHtml(prod.id)}">
+                    ➕ Restock
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-table-action btn-quick-adj" data-id="${escapeHtml(prod.id)}">
+                    ⚡ Adjust
+                  </button>
+                </div>
+              `}
             </td>
           </tr>
         `;
       }).join('');
+
+      stockTableBody.querySelectorAll('.btn-quick-restock').forEach(b => {
+        b.addEventListener('click', () => openRestockModal(b.dataset.id));
+      });
 
       stockTableBody.querySelectorAll('.btn-quick-adj').forEach(b => {
         b.addEventListener('click', () => {
@@ -413,6 +666,7 @@
 
     searchInput.addEventListener('input', renderStockTable);
     filterThreshold.addEventListener('change', renderStockTable);
+    expiryWindowSelect.addEventListener('change', renderBatches);
 
     // TAB 2: Batches
     async function loadBatches() {
@@ -432,35 +686,51 @@
     }
 
     function renderBatches() {
-      if (batches.length === 0) {
-        batchesTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">No physical batches logged yet. Inward purchases from the Purchases tab to record batches.</td></tr>`;
+      const windowVal = expiryWindowSelect.value;
+      const now = new Date();
+      const filteredBatches = batches.filter(b => {
+        if (windowVal === 'ALL') return true;
+        if (!b.expiryDate) return false;
+        const maxDays = parseInt(windowVal, 10);
+        const diffDays = Math.ceil((new Date(b.expiryDate) - now) / (1000 * 60 * 60 * 24));
+        return diffDays <= maxDays;
+      });
+
+      if (filteredBatches.length === 0) {
+        batchesTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">No batches found for the selected window.</td></tr>`;
         return;
       }
 
-      batchesTableBody.innerHTML = batches.map(b => {
-        const now = new Date();
-        const exp = new Date(b.expiryDate);
-        const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+      batchesTableBody.innerHTML = filteredBatches.map(b => {
+        const currentQty = Number(b.currentQty ?? 0);
+        const initialQty = Number(b.initialQty ?? 0);
+        const purchaseCost = Number(b.purchaseCost ?? 0);
 
-        let urgencyBadge = `<span class="badge badge-success">${diffDays} days left</span>`;
-        if (diffDays <= 0) {
-          urgencyBadge = `<span class="badge badge-danger">EXPIRED</span>`;
-        } else if (diffDays <= 7) {
-          urgencyBadge = `<span class="badge badge-danger">⚠️ ${diffDays} days left</span>`;
-        } else if (diffDays <= 30) {
-          urgencyBadge = `<span class="badge badge-warning">⏳ ${diffDays} days left</span>`;
+        let urgencyBadge = `<span class="badge badge-neutral">No Expiry</span>`;
+        if (b.expiryDate) {
+          const exp = new Date(b.expiryDate);
+          const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+          if (diffDays <= 0) {
+            urgencyBadge = `<span class="badge badge-danger">EXPIRED</span>`;
+          } else if (diffDays <= 7) {
+            urgencyBadge = `<span class="badge badge-danger">⚠️ ${diffDays} days left</span>`;
+          } else if (diffDays <= 30) {
+            urgencyBadge = `<span class="badge badge-warning">⏳ ${diffDays} days left</span>`;
+          } else {
+            urgencyBadge = `<span class="badge badge-success">${diffDays} days left</span>`;
+          }
         }
 
         return `
           <tr>
-            <td style="font-weight: 600; font-family: monospace;">${b.batchNumber}</td>
-            <td style="font-weight: 600;">${b.productName}</td>
-            <td>${b.supplierName || 'Primary Supplier'}</td>
-            <td>${b.inwardDate ? b.inwardDate.slice(0, 10) : '-'}</td>
-            <td>${b.expiryDate ? b.expiryDate.slice(0, 10) : '-'}</td>
-            <td>${b.remainingQuantity} / ${b.initialQuantity}</td>
-            <td>₹${b.costPricePerUnit?.toFixed(2) || '0.00'}</td>
-            <td>${urgencyBadge}</td>
+            <td style="font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap;">${escapeHtml(b.batchNumber || '-')}</td>
+            <td style="font-weight: 600; color: var(--gray-900);">${escapeHtml(b.productName || '-')}</td>
+            <td>${escapeHtml(b.supplierName || 'Direct / Unassigned')}</td>
+            <td style="text-align: center; white-space: nowrap;">${b.inwardDate ? escapeHtml(String(b.inwardDate).slice(0, 10)) : '-'}</td>
+            <td style="text-align: center; white-space: nowrap;">${b.expiryDate ? escapeHtml(String(b.expiryDate).slice(0, 10)) : '-'}</td>
+            <td style="text-align: center; font-weight: 600; white-space: nowrap;">${currentQty} / ${initialQty}</td>
+            <td style="text-align: right; font-weight: 600; white-space: nowrap;">₹${purchaseCost.toFixed(2)}</td>
+            <td style="text-align: center; white-space: nowrap;">${urgencyBadge}</td>
           </tr>
         `;
       }).join('');
@@ -485,33 +755,129 @@
       }
 
       txTableBody.innerHTML = transactions.map(tx => {
-        let deltaBadge = `<span style="color: var(--primary-700); font-weight: 700;">+${tx.quantity}</span>`;
-        if (tx.quantity < 0) {
-          deltaBadge = `<span style="color: var(--accent-rose); font-weight: 700;">${tx.quantity}</span>`;
+        const qty = Number(tx.quantity ?? 0);
+        let deltaBadge = `<span style="color: var(--primary-700); font-weight: 700;">+${qty}</span>`;
+        if (qty < 0) {
+          deltaBadge = `<span style="color: var(--accent-rose); font-weight: 700;">${qty}</span>`;
         }
 
-        let typeBadge = `<span class="badge badge-info">${tx.transactionType}</span>`;
-        if (tx.transactionType === 'SALE') typeBadge = `<span class="badge badge-info">POS SALE</span>`;
-        else if (tx.transactionType === 'DAMAGE') typeBadge = `<span class="badge badge-danger">DAMAGE</span>`;
-        else if (tx.transactionType === 'CUSTOMER_RETURN') typeBadge = `<span class="badge badge-success">RETURN</span>`;
-        else if (tx.transactionType === 'ADJUSTMENT') typeBadge = `<span class="badge badge-warning">ADJUSTMENT</span>`;
+        const txType = tx.type || 'ADJUSTMENT';
+        let typeBadge = `<span class="badge badge-info">${escapeHtml(txType)}</span>`;
+        if (txType === 'SALE') typeBadge = `<span class="badge badge-info">POS SALE</span>`;
+        else if (txType === 'RESTOCK') typeBadge = `<span class="badge badge-success">RESTOCK</span>`;
+        else if (txType === 'PURCHASE_RECEIPT') typeBadge = `<span class="badge badge-success">PURCHASE RECEIPT</span>`;
+        else if (txType === 'OPENING_STOCK') typeBadge = `<span class="badge badge-success">OPENING STOCK</span>`;
+        else if (txType === 'CUSTOMER_RETURN') typeBadge = `<span class="badge badge-success">RETURN</span>`;
+        else if (txType === 'DAMAGE') typeBadge = `<span class="badge badge-danger">DAMAGE</span>`;
+        else if (txType === 'EXPIRY') typeBadge = `<span class="badge badge-danger">EXPIRY</span>`;
+        else if (txType === 'INTERNAL_USE') typeBadge = `<span class="badge badge-warning">INTERNAL USE</span>`;
+        else if (txType === 'ADJUSTMENT') typeBadge = `<span class="badge badge-warning">ADJUSTMENT</span>`;
 
         return `
           <tr>
-            <td style="font-size: 12px; color: var(--gray-600);">${tx.createdAt ? tx.createdAt.replace('T', ' ').slice(0, 19) : '-'}</td>
-            <td style="font-weight: 600;">${tx.productName}</td>
-            <td>${typeBadge}</td>
-            <td>${deltaBadge}</td>
-            <td style="font-weight: 600;">${tx.balanceAfter}</td>
-            <td>${tx.performedBy || 'Staff'}</td>
-            <td style="font-family: monospace; font-size: 11px;">${tx.referenceNumber || '-'}</td>
-            <td style="font-size: 12px; color: var(--gray-600);">${tx.remarks || '-'}</td>
+            <td style="font-size: 12.5px; color: var(--gray-600); white-space: nowrap;">${tx.createdAt ? escapeHtml(String(tx.createdAt).replace('T', ' ').slice(0, 19)) : '-'}</td>
+            <td style="font-weight: 600; color: var(--gray-900);">${escapeHtml(tx.productName || '-')}</td>
+            <td style="text-align: center; white-space: nowrap;">${typeBadge}</td>
+            <td style="text-align: right; white-space: nowrap;">${deltaBadge}</td>
+            <td style="text-align: right; font-weight: 600; white-space: nowrap;">${Number(tx.balanceAfter ?? 0)}</td>
+            <td>${escapeHtml(tx.performedBy || 'Staff')}</td>
+            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; white-space: nowrap;">${escapeHtml(tx.referenceId || '-')}</td>
+            <td style="font-size: 12.5px; color: var(--gray-600);">${escapeHtml(tx.notes || '-')}</td>
           </tr>
         `;
       }).join('');
     }
 
     document.getElementById('btn-refresh-tx').addEventListener('click', loadTransactions);
+
+    // Restock / Stock-In Modal
+    function openRestockModal(productId = '') {
+      restockForm.reset();
+      currentRestockIdempotencyKey = generateIdempotencyKey();
+      if (productId) {
+        restockProductSelect.value = productId;
+        const selectedProd = products.find(p => p.id === productId);
+        if (selectedProd && Number.isFinite(Number(selectedProd.costPrice))) {
+          restockCostInput.value = Number(selectedProd.costPrice).toFixed(2);
+        }
+      }
+      restockModal.classList.add('active');
+    }
+
+    restockProductSelect.addEventListener('change', () => {
+      const opt = restockProductSelect.options[restockProductSelect.selectedIndex];
+      const cost = opt ? parseFloat(opt.dataset.cost) : NaN;
+      if (Number.isFinite(cost)) {
+        restockCostInput.value = cost.toFixed(2);
+      }
+    });
+
+    document.getElementById('btn-open-restock').addEventListener('click', () => openRestockModal());
+    document.getElementById('close-restock-modal').addEventListener('click', () => restockModal.classList.remove('active'));
+    document.getElementById('btn-cancel-restock').addEventListener('click', () => restockModal.classList.remove('active'));
+
+    restockForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const productId = restockProductSelect.value;
+      const qty = parseFloat(document.getElementById('restock-qty').value);
+      const rawCost = restockCostInput.value.trim();
+      const supplierId = document.getElementById('restock-supplier').value;
+      const expiryDate = document.getElementById('restock-expiry').value;
+      const batchNumber = document.getElementById('restock-batch').value.trim();
+      const notes = document.getElementById('restock-notes').value.trim();
+
+      if (!productId) {
+        showToast('Please select a product to restock', 'error');
+        return;
+      }
+      if (!Number.isFinite(qty) || qty <= 0) {
+        showToast('Restock quantity must be greater than zero', 'error');
+        return;
+      }
+      let purchaseCost = null;
+      if (rawCost !== '') {
+        purchaseCost = parseFloat(rawCost);
+        if (!Number.isFinite(purchaseCost) || purchaseCost < 0) {
+          showToast('Purchase cost must be a non-negative number', 'error');
+          return;
+        }
+      }
+
+      const payload = {
+        productId,
+        quantity: qty,
+        idempotencyKey: currentRestockIdempotencyKey || generateIdempotencyKey()
+      };
+      if (purchaseCost !== null) payload.purchaseCost = purchaseCost;
+      if (supplierId) payload.supplierId = supplierId;
+      if (expiryDate) payload.expiryDate = expiryDate;
+      if (batchNumber) payload.batchNumber = batchNumber;
+      if (notes) payload.notes = notes;
+
+      try {
+        const btn = document.getElementById('btn-submit-restock');
+        btn.disabled = true;
+        btn.textContent = 'Restocking...';
+
+        const res = await Api.post('/inventory/restock', payload);
+        const updatedProd = res?.data?.product;
+        const msg = updatedProd
+          ? `Restocked ${updatedProd.name}: new stock is ${updatedProd.currentStock} ${updatedProd.unit || ''}`
+          : 'Stock replenished successfully';
+        showToast(msg, 'success');
+
+        restockModal.classList.remove('active');
+        await loadData();
+        if (activeTab === 'batches') await loadBatches();
+        if (activeTab === 'movements') await loadTransactions();
+      } catch (err) {
+        showToast(err.message || 'Failed to restock product', 'error');
+      } finally {
+        const btn = document.getElementById('btn-submit-restock');
+        btn.disabled = false;
+        btn.textContent = 'Confirm Restock';
+      }
+    });
 
     // Quick Adjustment Modal
     document.getElementById('btn-open-adjustment').addEventListener('click', () => {
@@ -524,11 +890,24 @@
 
     adjForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const productId = document.getElementById('adj-product').value;
+      const qty = parseFloat(document.getElementById('adj-qty').value);
+      const notes = document.getElementById('adj-notes').value.trim();
+
+      if (!productId) {
+        showToast('Please select a product', 'error');
+        return;
+      }
+      if (!Number.isFinite(qty) || qty === 0) {
+        showToast('Quantity change must be a non-zero number', 'error');
+        return;
+      }
+
       const payload = {
-        productId: document.getElementById('adj-product').value,
+        productId,
         type: document.getElementById('adj-type').value,
-        quantity: parseFloat(document.getElementById('adj-qty').value),
-        notes: document.getElementById('adj-notes').value.trim()
+        quantity: qty,
+        notes
       };
 
       try {
@@ -541,6 +920,9 @@
 
         adjModal.classList.remove('active');
         await loadData();
+        if (activeTab === 'movements') {
+          await loadTransactions();
+        }
       } catch (err) {
         showToast(err.message || 'Failed to record adjustment', 'error');
       } finally {
@@ -555,7 +937,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

@@ -123,9 +123,18 @@
   margin-top: 2px;
 }
 
-.metric-trend.up { color: #059669; }
-.metric-trend.down { color: #dc2626; }
-.metric-trend.muted { color: var(--text-secondary); font-weight: 500; }
+.metric-trend.up {
+  color: #059669;
+}
+
+.metric-trend.down {
+  color: #dc2626;
+}
+
+.metric-trend.muted {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
 
 .metric-icon-box {
   width: 44px;
@@ -138,11 +147,30 @@
   flex-shrink: 0;
 }
 
-.metric-icon-box.green { background: #ecfdf5; color: #059669; }
-.metric-icon-box.blue { background: #eff6ff; color: #2563eb; }
-.metric-icon-box.amber { background: #fffbeb; color: #d97706; }
-.metric-icon-box.red { background: #fef2f2; color: #dc2626; }
-.metric-icon-box.purple { background: #f5f3ff; color: #7c3aed; }
+.metric-icon-box.green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.metric-icon-box.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.metric-icon-box.amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.metric-icon-box.red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.metric-icon-box.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
 
 .dashboard-grid {
   display: grid;
@@ -285,9 +313,20 @@
   font-weight: 600;
 }
 
-.status-pill.completed { background: #ecfdf5; color: #047857; }
-.status-pill.partial { background: #fffbeb; color: #b45309; }
-.status-pill.refunded { background: #fef2f2; color: #b91c1c; }
+.status-pill.completed {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.status-pill.partial {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.status-pill.refunded {
+  background: #fef2f2;
+  color: #b91c1c;
+}
 
 @media (max-width: 1024px) {
   .dashboard-grid {
@@ -296,22 +335,27 @@
 }
 
 @media (max-width: 768px) {
+
   .content-body,
   .main-wrapper {
     min-width: 0;
     max-width: 100vw;
     overflow-x: hidden;
   }
+
   .dashboard-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
+
   .metrics-grid {
     grid-template-columns: 1fr;
   }
+
   .date-filter-bar {
     width: 100%;
   }
+
   .trend-chart-container {
     max-width: 100%;
   }

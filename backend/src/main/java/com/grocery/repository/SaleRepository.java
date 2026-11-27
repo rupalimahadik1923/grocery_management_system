@@ -21,6 +21,7 @@ public interface SaleRepository extends MongoRepository<Sale, String> {
     // Tenant-scoped queries
     Optional<Sale> findByStoreIdAndId(String storeId, String id);
     Optional<Sale> findByStoreIdAndReceiptNumber(String storeId, String receiptNumber);
+    Optional<Sale> findByStoreIdAndIdempotencyKey(String storeId, String idempotencyKey);
     List<Sale> findByStoreIdOrderByCreatedAtDesc(String storeId);
     List<Sale> findByStoreIdAndCreatedAtBetweenOrderByCreatedAtDesc(String storeId, LocalDateTime start, LocalDateTime end);
     @Query(value = "{'storeId': ?0, 'createdAt': {'$gte': ?1, '$lt': ?2}}", sort = "{'createdAt': -1}")

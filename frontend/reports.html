@@ -10,34 +10,51 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Reports & Analytics UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(5, minmax(175px, 1fr));
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 1200px) {
+      .metrics-bar {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+      }
+    }
+    @media (max-width: 768px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 18px 20px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .metric-mini-lbl {
+      font-size: 11.5px;
+      color: var(--gray-500);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .metric-mini-val {
       font-size: 24px;
       font-weight: 800;
       color: var(--gray-900);
-      margin: 4px 0;
-    }
-    .metric-mini-lbl {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin: 6px 0 4px;
+      line-height: 1.15;
     }
     .metric-mini-sub {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--primary-700);
       font-weight: 600;
     }
@@ -45,7 +62,12 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 960px) {
+      .pnl-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .report-card {
       background: #ffffff;
@@ -54,21 +76,47 @@
       padding: 24px;
       box-shadow: var(--shadow-sm);
     }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+    }
     .export-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(3, minmax(240px, 1fr));
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 18px;
+    }
+    @media (max-width: 1000px) {
+      .export-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .export-card {
-      background: #ffffff;
+      background: var(--gray-50);
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .export-card:hover {
+      border-color: var(--primary-300);
       box-shadow: var(--shadow-sm);
+    }
+    .btn-export-pill {
+      height: 36px;
+      padding: 0 16px;
+      font-size: 12.5px;
+      white-space: nowrap;
+      text-decoration: none !important;
     }
   </style>
 </head>
@@ -78,7 +126,7 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- P&L Financial Cards Ribbon -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
@@ -89,7 +137,7 @@
           <div class="metric-mini-card">
             <div class="metric-mini-lbl">Cost of Goods (COGS)</div>
             <div class="metric-mini-val" id="pnl-cogs" style="color: var(--gray-700);">₹0.00</div>
-            <div class="metric-mini-sub">~70% grocery inventory cost</div>
+            <div class="metric-mini-sub">Grocery inventory cost</div>
           </div>
           <div class="metric-mini-card">
             <div class="metric-mini-lbl">Gross Profit</div>
@@ -99,7 +147,7 @@
           <div class="metric-mini-card">
             <div class="metric-mini-lbl">Operating Expenses</div>
             <div class="metric-mini-val" id="pnl-expenses" style="color: var(--accent-rose);">₹0.00</div>
-            <div class="metric-mini-sub">Rent, utilities & salaries</div>
+            <div class="metric-mini-sub">Rent, utilities &amp; salaries</div>
           </div>
           <div class="metric-mini-card">
             <div class="metric-mini-lbl">Net Profit</div>
@@ -115,21 +163,21 @@
             <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px;">
               📊 Sales Turnover Summary
             </h3>
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                <span>Total Orders Completed:</span>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="summary-row">
+                <span style="color: var(--gray-600);">Total Orders Completed</span>
                 <strong id="rep-total-orders">0 orders</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                <span>Average Order Value (AOV):</span>
+              <div class="summary-row">
+                <span style="color: var(--gray-600);">Average Order Value (AOV)</span>
                 <strong id="rep-aov">₹0.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                <span>Discounts Given:</span>
+              <div class="summary-row">
+                <span style="color: var(--gray-600);">Discounts Given</span>
                 <strong style="color: var(--accent-rose);" id="rep-total-discount">₹0.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                <span>GST Tax Collected (CGST + SGST):</span>
+              <div class="summary-row">
+                <span style="color: var(--gray-600);">GST Tax Collected (CGST + SGST)</span>
                 <strong style="color: var(--primary-700);" id="rep-total-tax">₹0.00</strong>
               </div>
             </div>
@@ -151,35 +199,35 @@
         <!-- Download Reports Hub -->
         <div class="report-card">
           <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">
-            📥 Direct Export & Download Hub
+            📥 Direct Export &amp; Download Hub
           </h3>
-          <p style="font-size: 13px; color: var(--gray-500); margin-bottom: 16px;">
-            Export standard CSV spreadsheets for accounting, audit submissions, and college project evaluation.
+          <p style="font-size: 13px; color: var(--gray-500); margin-bottom: 6px;">
+            Export standard CSV spreadsheets for accounting, audit submissions, and store reviews.
           </p>
 
           <div class="export-grid">
             <div class="export-card">
               <div>
-                <div style="font-weight: 700;">📦 Product Master Report</div>
-                <div style="font-size: 11px; color: var(--gray-500);">All SKUs, costs, prices, stock</div>
+                <div style="font-weight: 700; color: var(--gray-900);">📦 Product Master Report</div>
+                <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">All SKUs, costs, prices, stock</div>
               </div>
-              <a href="http://localhost:8080/api/v1/reports/export/products" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+              <a href="/api/v1/reports/export/products" download class="btn btn-secondary btn-export-pill">📥 Download CSV</a>
             </div>
 
             <div class="export-card">
               <div>
-                <div style="font-weight: 700;">🧾 Sales Transactions Ledger</div>
-                <div style="font-size: 11px; color: var(--gray-500);">Line-by-line checkout logs</div>
+                <div style="font-weight: 700; color: var(--gray-900);">🧾 Sales Transactions Ledger</div>
+                <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">Line-by-line checkout logs</div>
               </div>
-              <a href="http://localhost:8080/api/v1/reports/export/sales" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+              <a href="/api/v1/reports/export/sales" download class="btn btn-secondary btn-export-pill">📥 Download CSV</a>
             </div>
 
             <div class="export-card">
               <div>
-                <div style="font-weight: 700;">💰 Operating Expenses Ledger</div>
-                <div style="font-size: 11px; color: var(--gray-500);">All cost receipts and vouchers</div>
+                <div style="font-weight: 700; color: var(--gray-900);">💰 Operating Expenses Ledger</div>
+                <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">All cost receipts and vouchers</div>
               </div>
-              <a href="http://localhost:8080/api/v1/reports/export/expenses" download class="btn btn-secondary" style="font-size: 12px;">Download CSV</a>
+              <a href="/api/v1/reports/export/expenses" download class="btn btn-secondary btn-export-pill">📥 Download CSV</a>
             </div>
           </div>
         </div>
@@ -193,6 +241,16 @@
     import { Api } from './js/api.js';
 
     Layout.init({ activePage: 'reports', title: 'Reports & Analytics' });
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function loadReports() {
       try {
@@ -235,7 +293,7 @@
       }
     }
 
-    function renderTopProducts(salesList, catalogProducts) {
+    function renderTopProducts(salesList) {
       const counts = {};
       salesList.forEach(sale => {
         (sale.items || []).forEach(item => {
@@ -256,10 +314,10 @@
       }
 
       container.innerHTML = sorted.map(([name, qty], idx) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--gray-50); border-radius: var(--radius-md);">
+        <div class="summary-row">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-weight: 800; color: var(--primary-700); width: 24px;">#${idx + 1}</div>
-            <div style="font-weight: 600; color: var(--gray-900);">${name}</div>
+            <div style="font-weight: 800; color: var(--primary-700); width: 26px;">#${idx + 1}</div>
+            <div style="font-weight: 600; color: var(--gray-900);">${escapeHtml(name)}</div>
           </div>
           <span class="badge badge-success">${qty} units sold</span>
         </div>
@@ -271,7 +329,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

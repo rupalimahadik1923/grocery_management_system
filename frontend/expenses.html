@@ -10,43 +10,139 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Operating Expenses UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 900px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
     .metric-mini-val {
       font-size: 24px;
       font-weight: 800;
       color: var(--gray-900);
+      line-height: 1.15;
     }
-    .metric-mini-lbl {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 500;
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
     }
+    .metric-mini-icon.rose {
+      background: var(--accent-rose-light);
+      border-color: #fecdd3;
+    }
+    .metric-mini-icon.blue {
+      background: var(--accent-blue-light);
+      border-color: #bfdbfe;
+    }
+
+    /* Filter Toolbar */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .cat-filter-select {
+      width: 190px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 20px;
+      font-size: 13.5px;
+    }
+    .btn-table-action-danger {
+      height: 34px;
+      padding: 0 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+      background: #fff1f2;
+      transition: all var(--transition-fast);
+    }
+    .btn-table-action-danger:hover {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: #9f1239;
+      transform: translateY(-1px);
     }
   </style>
 </head>
@@ -56,46 +152,48 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- Metrics Ribbon -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-exp" style="color: var(--accent-rose);">₹0.00</div>
               <div class="metric-mini-lbl">Total Operating Expenses</div>
+              <div class="metric-mini-val" id="metric-total-exp" style="color: var(--accent-rose);">₹0.00</div>
             </div>
-            <div style="font-size: 30px;">💸</div>
+            <div class="metric-mini-icon rose">💸</div>
           </div>
           <div class="metric-mini-card">
             <div>
+              <div class="metric-mini-lbl">Rent &amp; Utilities</div>
               <div class="metric-mini-val" id="metric-rent-util">₹0.00</div>
-              <div class="metric-mini-lbl">Rent & Utilities</div>
             </div>
-            <div style="font-size: 30px;">🏢</div>
+            <div class="metric-mini-icon blue">🏢</div>
           </div>
           <div class="metric-mini-card">
             <div>
+              <div class="metric-mini-lbl">Staff Salaries &amp; Wages</div>
               <div class="metric-mini-val" id="metric-salaries">₹0.00</div>
-              <div class="metric-mini-lbl">Staff Salaries & Wages</div>
             </div>
-            <div style="font-size: 30px;">💼</div>
+            <div class="metric-mini-icon">💼</div>
           </div>
         </div>
 
         <!-- Filter Toolbar -->
         <div class="toolbar-container">
-          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
-            <input 
-              type="text" 
-              id="exp-search-input" 
-              class="form-control" 
-              style="max-width: 280px;" 
-              placeholder="Search description or voucher..." 
-            />
-            <select id="exp-cat-filter" class="form-control" style="max-width: 180px;">
+          <div class="toolbar-filters">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="exp-search-input"
+                class="form-control"
+                placeholder="Search description or voucher..."
+              />
+            </div>
+            <select id="exp-cat-filter" class="form-control cat-filter-select">
               <option value="ALL">All Categories</option>
               <option value="Rent">Rent</option>
-              <option value="Electricity">Electricity & Water</option>
+              <option value="Electricity">Electricity &amp; Water</option>
               <option value="Salaries">Staff Salaries</option>
               <option value="Packaging">Packaging Bags</option>
               <option value="Maintenance">Maintenance</option>
@@ -103,22 +201,25 @@
               <option value="Others">Others</option>
             </select>
           </div>
-          <button class="btn btn-primary" id="btn-add-expense">➕ Record New Expense</button>
+          <button type="button" class="btn btn-primary btn-toolbar" id="btn-add-expense">
+            <span class="btn-icon-circle">+</span>
+            <span>Record New Expense</span>
+          </button>
         </div>
 
         <!-- Expenses Table -->
         <div class="table-container">
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
-                <th>Date</th>
+                <th style="white-space: nowrap;">Date</th>
                 <th>Title / Description</th>
-                <th>Category</th>
-                <th>Amount (₹)</th>
-                <th>Paid Via</th>
-                <th>Voucher #</th>
+                <th style="text-align: center; white-space: nowrap;">Category</th>
+                <th style="text-align: right; white-space: nowrap;">Amount (₹)</th>
+                <th style="white-space: nowrap;">Paid Via</th>
+                <th style="white-space: nowrap;">Voucher #</th>
                 <th>Recorded By</th>
-                <th style="text-align: right;">Action</th>
+                <th style="text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
             <tbody id="expenses-table-body">
@@ -137,24 +238,24 @@
 
   <!-- RECORD EXPENSE MODAL -->
   <div class="modal-overlay" id="expense-modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 540px;">
       <div class="modal-header">
         <h3 class="modal-title">Record Operating Expense</h3>
-        <button class="modal-close-btn" id="close-exp-modal">&times;</button>
+        <button type="button" class="modal-close-btn" id="close-exp-modal">&times;</button>
       </div>
       <form id="expense-form">
         <div class="modal-body" style="padding: 20px 24px;">
           <div class="form-group">
-            <label class="form-label">Expense Description / Title *</label>
+            <label class="form-label" for="exp-title">Expense Description / Title *</label>
             <input type="text" id="exp-title" class="form-control" required placeholder="e.g. September Electricity Bill" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Category *</label>
+              <label class="form-label" for="exp-category">Category *</label>
               <select id="exp-category" class="form-control" required>
                 <option value="Rent">Rent</option>
-                <option value="Electricity">Electricity & Water</option>
+                <option value="Electricity">Electricity &amp; Water</option>
                 <option value="Salaries">Staff Salaries</option>
                 <option value="Packaging">Packaging Materials</option>
                 <option value="Maintenance">Maintenance</option>
@@ -163,14 +264,14 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Amount (₹) *</label>
-              <input type="number" step="0.01" id="exp-amount" class="form-control" required placeholder="0.00" />
+              <label class="form-label" for="exp-amount">Amount (₹) *</label>
+              <input type="number" step="0.01" min="0.01" id="exp-amount" class="form-control" required placeholder="0.00" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Payment Method</label>
+              <label class="form-label" for="exp-method">Payment Method</label>
               <select id="exp-method" class="form-control">
                 <option value="Register Cash">Register Cash</option>
                 <option value="Bank Transfer">Bank Transfer / NEFT</option>
@@ -178,18 +279,18 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Expense Date</label>
+              <label class="form-label" for="exp-date">Expense Date</label>
               <input type="date" id="exp-date" class="form-control" />
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Voucher / Receipt Reference #</label>
-            <input type="text" id="exp-voucher" class="form-control" placeholder="e.g. VCH-2024-001" />
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="exp-voucher">Voucher / Receipt Reference #</label>
+            <input type="text" id="exp-voucher" class="form-control" placeholder="e.g. VCH-2026-001" />
           </div>
         </div>
 
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-secondary" id="btn-cancel-exp">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-save-exp">Record Expense</button>
         </div>
@@ -209,6 +310,16 @@
     const catFilter = document.getElementById('exp-cat-filter');
     const expModal = document.getElementById('expense-modal');
     const expForm = document.getElementById('expense-form');
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function loadExpenses() {
       try {
@@ -236,8 +347,8 @@
       const q = searchInput.value.toLowerCase().trim();
       const cat = catFilter.value;
 
-      let filtered = expenses.filter(e => {
-        const matchesQ = !q || 
+      const filtered = expenses.filter(e => {
+        const matchesQ = !q ||
           (e.title && e.title.toLowerCase().includes(q)) ||
           (e.voucherRef && e.voucherRef.toLowerCase().includes(q));
 
@@ -249,7 +360,7 @@
         tableBody.innerHTML = `
           <tr>
             <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-400);">
-              No operating expenses found. Click "Record New Expense" to log costs.
+              No operating expenses found. Click <strong>Record New Expense</strong> to log costs.
             </td>
           </tr>
         `;
@@ -258,15 +369,15 @@
 
       tableBody.innerHTML = filtered.map(e => `
         <tr>
-          <td style="font-size: 12px; color: var(--gray-600);">${e.expenseDate || '-'}</td>
-          <td style="font-weight: 600; color: var(--gray-900);">${e.title}</td>
-          <td><span class="badge badge-neutral">${e.category}</span></td>
-          <td style="font-weight: 700; color: var(--accent-rose);">₹${e.amount?.toFixed(2)}</td>
-          <td>${e.paymentMethod || 'Register Cash'}</td>
-          <td style="font-family: monospace; font-size: 11px;">${e.voucherRef || '-'}</td>
-          <td>${e.recordedBy || 'Staff'}</td>
-          <td style="text-align: right;">
-            <button class="btn btn-secondary btn-del-exp" data-id="${e.id}" style="padding: 4px 8px; font-size: 12px; color: var(--accent-rose);">🗑️</button>
+          <td style="font-size: 13px; color: var(--gray-600); white-space: nowrap;">${escapeHtml(e.expenseDate || '-')}</td>
+          <td style="font-weight: 600; color: var(--gray-900);">${escapeHtml(e.title)}</td>
+          <td style="text-align: center; white-space: nowrap;"><span class="badge badge-neutral">${escapeHtml(e.category)}</span></td>
+          <td style="text-align: right; font-weight: 700; color: var(--accent-rose); white-space: nowrap;">₹${Number(e.amount || 0).toFixed(2)}</td>
+          <td style="white-space: nowrap;">${escapeHtml(e.paymentMethod || 'Register Cash')}</td>
+          <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap;">${escapeHtml(e.voucherRef || '-')}</td>
+          <td>${escapeHtml(e.recordedBy || 'Staff')}</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button type="button" class="btn-table-action-danger btn-del-exp" data-id="${escapeHtml(e.id)}" title="Delete expense">🗑️ Delete</button>
           </td>
         </tr>
       `).join('');
@@ -335,7 +446,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

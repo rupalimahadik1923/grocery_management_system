@@ -10,23 +10,65 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Returns & Restocking UI */
     .lookup-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
       border-radius: var(--radius-lg);
       padding: 24px;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
       box-shadow: var(--shadow-sm);
+    }
+    .lookup-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      max-width: 560px;
+    }
+    .lookup-row .form-control {
+      height: 40px;
+      flex: 1;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 20px;
+      font-size: 13.5px;
+    }
+    .return-cols-header {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+      display: grid;
+      grid-template-columns: 44px 2.2fr 100px 100px 1.6fr 125px;
+      gap: 12px;
+      padding: 0 14px;
     }
     .return-item-row {
       display: grid;
-      grid-template-columns: 40px 2fr 1fr 1fr 1.5fr 1fr;
+      grid-template-columns: 44px 2.2fr 100px 100px 1.6fr 125px;
       gap: 12px;
       align-items: center;
-      padding: 12px;
+      padding: 12px 14px;
       background: var(--gray-50);
+      border: 1px solid var(--gray-200);
       border-radius: var(--radius-md);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .return-item-row .form-control {
+      height: 36px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .btn-confirm-pill {
+      height: 30px;
+      padding: 0 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      margin-left: 8px;
     }
   </style>
 </head>
@@ -45,15 +87,15 @@
           <p style="font-size: 13px; color: var(--gray-500); margin-bottom: 16px;">
             Enter the original POS receipt number printed on the customer's thermal bill to verify purchased items and eligibility.
           </p>
-          <div style="display: flex; gap: 12px; max-width: 500px;">
-            <input 
-              type="text" 
-              id="return-receipt-input" 
-              class="form-control" 
-              placeholder="Enter receipt number (e.g. RCP-2024-12345)..." 
-              autofocus 
+          <div class="lookup-row">
+            <input
+              type="text"
+              id="return-receipt-input"
+              class="form-control"
+              placeholder="Enter receipt number (e.g. RCP-2026-00001)..."
+              autofocus
             />
-            <button class="btn btn-primary" id="btn-lookup-receipt">Lookup Receipt</button>
+            <button type="button" class="btn btn-primary btn-toolbar" id="btn-lookup-receipt">Lookup Receipt</button>
           </div>
         </div>
 
@@ -62,9 +104,9 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
               <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-900);">
-                🔄 Step 2: Select Items for Return & Refund
+                🔄 Step 2: Select Items for Return &amp; Refund
               </h2>
-              <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;" id="order-meta-info"></div>
+              <div style="font-size: 12.5px; color: var(--gray-500); margin-top: 4px;" id="order-meta-info"></div>
             </div>
             <div style="text-align: right;">
               <div style="font-size: 12px; color: var(--gray-500);">Refund Total:</div>
@@ -73,7 +115,7 @@
           </div>
 
           <!-- Items Selection Header -->
-          <div style="font-size: 12px; font-weight: 700; color: var(--gray-600); margin-bottom: 8px; display: grid; grid-template-columns: 40px 2fr 1fr 1fr 1.5fr 1fr; gap: 12px; padding: 0 12px;">
+          <div class="return-cols-header">
             <span>Select</span>
             <span>Product</span>
             <span>Bought Qty</span>
@@ -86,17 +128,17 @@
             <!-- Injected dynamically -->
           </div>
 
-          <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--gray-200); padding-top: 16px;">
+          <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--gray-200); padding-top: 16px; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; gap: 12px; align-items: center;">
-              <label class="form-label" style="margin: 0;">Refund Payment Mode:</label>
-              <select id="refund-mode" class="form-control" style="width: 160px;">
+              <label class="form-label" for="refund-mode" style="margin: 0;">Refund Payment Mode:</label>
+              <select id="refund-mode" class="form-control" style="width: 175px; height: 40px;">
                 <option value="CASH">Cash Refund</option>
                 <option value="UPI">UPI Refund</option>
                 <option value="STORE_CREDIT">Store Credit</option>
               </select>
             </div>
-            <button class="btn btn-primary" id="btn-process-refund" style="background: var(--accent-rose); border-color: var(--accent-rose);">
-              💸 Process Return & Issue Refund
+            <button type="button" class="btn btn-primary btn-toolbar" id="btn-process-refund" style="background: var(--accent-rose); border-color: var(--accent-rose);">
+              💸 Process Return &amp; Issue Refund
             </button>
           </div>
         </div>
@@ -104,18 +146,18 @@
         <!-- Returns History Log -->
         <div class="table-container" style="margin-top: 24px;">
           <div style="padding: 16px 20px; border-bottom: 1px solid var(--gray-200); font-weight: 700; font-size: 15px; color: var(--gray-900);">
-            Past Returns & Credit Notes
+            Past Returns &amp; Credit Notes
           </div>
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
-                <th>Return #</th>
-                <th>Receipt #</th>
-                <th>Date & Time</th>
+                <th style="white-space: nowrap;">Return #</th>
+                <th style="white-space: nowrap;">Receipt #</th>
+                <th style="white-space: nowrap;">Date &amp; Time</th>
                 <th>Processed By</th>
-                <th>Refund Amount</th>
+                <th style="text-align: right; white-space: nowrap;">Refund Amount</th>
                 <th>Reason</th>
-                <th>Status</th>
+                <th style="text-align: center; white-space: nowrap;">Status</th>
               </tr>
             </thead>
             <tbody id="returns-history-body">
@@ -169,17 +211,17 @@
         const st = (r.status || 'PENDING').toUpperCase();
         const badgeCls = st === 'COMPLETED' ? 'badge-success' : (st === 'PENDING' ? 'badge-warning' : 'badge-danger');
         const actionBtn = st === 'PENDING'
-          ? ` <button class="btn btn-secondary btn-confirm-refund" data-id="${r.id}" style="padding: 2px 8px; font-size: 11px; margin-left: 6px;">Confirm Paid</button>`
+          ? `<button type="button" class="btn btn-secondary btn-confirm-pill btn-confirm-refund" data-id="${r.id}">Confirm Paid</button>`
           : '';
         return `
         <tr>
-          <td style="font-family: monospace; font-weight: 700; color: var(--accent-rose);">${r.returnNumber}</td>
-          <td style="font-family: monospace;">${r.receiptNumber || '-'}</td>
-          <td style="font-size: 12px; color: var(--gray-600);">${r.createdAt ? r.createdAt.replace('T', ' ').slice(0, 19) : '-'}</td>
+          <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--accent-rose); white-space: nowrap;">${r.returnNumber}</td>
+          <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap;">${r.receiptNumber || '-'}</td>
+          <td style="font-size: 13px; color: var(--gray-600); white-space: nowrap;">${r.createdAt ? r.createdAt.replace('T', ' ').slice(0, 19) : '-'}</td>
           <td>${r.processedBy || 'Staff'}</td>
-          <td style="font-weight: 700; color: var(--accent-rose);">₹${Number(amt).toFixed(2)}</td>
-          <td style="font-size: 12px;">${r.notes || r.reason || 'Customer Return'}</td>
-          <td><span class="badge ${badgeCls}">${st}</span>${actionBtn}</td>
+          <td style="text-align: right; font-weight: 700; color: var(--accent-rose); white-space: nowrap;">₹${Number(amt).toFixed(2)}</td>
+          <td style="font-size: 13px; color: var(--gray-600);">${r.notes || r.reason || 'Customer Return'}</td>
+          <td style="text-align: center; white-space: nowrap;"><span class="badge ${badgeCls}">${st}</span>${actionBtn}</td>
         </tr>
       `;
       }).join('');

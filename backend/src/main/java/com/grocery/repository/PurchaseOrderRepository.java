@@ -15,6 +15,7 @@ public interface PurchaseOrderRepository extends MongoRepository<PurchaseOrder, 
 
     // Tenant-scoped queries
     Optional<PurchaseOrder> findByStoreIdAndId(String storeId, String id);
+    Optional<PurchaseOrder> findByStoreIdAndReceiveIdempotencyKey(String storeId, String receiveIdempotencyKey);
     List<PurchaseOrder> findByStoreIdAndStatusOrderByCreatedAtDesc(String storeId, String status);
     List<PurchaseOrder> findByStoreIdOrderByCreatedAtDesc(String storeId);
     long countByStoreId(String storeId);

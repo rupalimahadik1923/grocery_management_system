@@ -5,6 +5,8 @@ import com.grocery.model.*;
 import com.grocery.repository.*;
 import com.grocery.security.TenantContext;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -18,21 +20,21 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1")
 @PreAuthorize("hasAnyRole('ADMIN','STORE_MANAGER','CASHIER')")
 public class SaleController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SaleController.class);
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     private volatile long reservationGracePeriodMs = 30_000L;
 
@@ -78,23 +80,62 @@ public class SaleController {
                     .body(ApiResponse.error("Sale must contain at least one item"));
         }
 
-        // Validate all referenced products belong to the authenticated store and are active BEFORE mutating stock
+        // Compute authoritative payload fingerprint for idempotency conflict protection
+        String requestFingerprint = computePayloadFingerprint(sale);
+
+        // 1. Check idempotency if idempotencyKey is supplied
+        String idempotencyKey = sale.getIdempotencyKey();
+        if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
+            idempotencyKey = idempotencyKey.trim();
+            sale.setIdempotencyKey(idempotencyKey);
+            sale.setIdempotencyFingerprint(requestFingerprint);
+            java.util.Optional<Sale> existingSaleOpt = saleRepository.findByStoreIdAndIdempotencyKey(storeId, idempotencyKey);
+            if (existingSaleOpt.isPresent()) {
+                Sale existing = existingSaleOpt.get();
+                // If fingerprint is recorded on existing sale and doesn't match current request, reject conflict!
+                if (existing.getIdempotencyFingerprint() != null && !existing.getIdempotencyFingerprint().equals(requestFingerprint)) {
+                    return ResponseEntity.status(409)
+                            .body(ApiResponse.error("Idempotency conflict: key '" + idempotencyKey + "' has already been used with different checkout items or customer."));
+                }
+                return ResponseEntity.ok(ApiResponse.success("Checkout processed successfully (idempotent)", existing));
+            }
+        } else {
+            sale.setIdempotencyKey(null);
+            sale.setIdempotencyFingerprint(null);
+        }
+
+        // 2. Validate items, positive quantities, store ownership, and status BEFORE mutating stock
         Map<String, Product> verifiedProducts = new HashMap<>();
+        Map<String, Double> aggregatedQuantities = new HashMap<>();
+
         for (Sale.SaleItem item : sale.getItems()) {
             if (item.getProductId() == null || item.getProductId().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Each sale item must reference a valid productId"));
             }
-            Product product = productRepository.findByStoreIdAndId(storeId, item.getProductId().trim()).orElse(null);
-            if (product == null) {
+            String pId = item.getProductId().trim();
+            item.setProductId(pId);
+
+            if (item.getQuantity() <= 0) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Product does not belong to your store: " + item.getProductId()));
+                        .body(ApiResponse.error("Item quantity must be strictly greater than 0: " + pId));
             }
-            if (!"ACTIVE".equalsIgnoreCase(product.getStatus())) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Inactive product cannot be sold: " + product.getName()));
+
+            if (!verifiedProducts.containsKey(pId)) {
+                Product product = productRepository.findByStoreIdAndId(storeId, pId).orElse(null);
+                if (product == null) {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error("Product does not belong to your store: " + pId));
+                }
+                if (!"ACTIVE".equalsIgnoreCase(product.getStatus())) {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error("Inactive product cannot be sold: " + product.getName()));
+                }
+                verifiedProducts.put(pId, product);
             }
-            verifiedProducts.put(item.getProductId(), product);
+
+            // Aggregate duplicate cart lines for the same product to prevent stock boundary bypass
+            aggregatedQuantities.put(pId, aggregatedQuantities.getOrDefault(pId, 0.0) + item.getQuantity());
         }
 
         // Validate referenced customerId belongs to the authenticated store
@@ -113,66 +154,252 @@ public class SaleController {
         LocalDateTime nowIst = LocalDateTime.ofInstant(nowInstant, IST);
         sale.setStoreId(storeId);
         sale.setCashierName(username);
-        sale.setReceiptNumber("RCP-" + nowIst.getYear() + "-" + (int)(Math.random() * 90000 + 10000));
         sale.setCreatedAt(nowIst);
         sale.setCreatedAtInstant(nowInstant);
         sale.setStatus("COMPLETED");
         sale.setRefundedTotal(0.0);
         sale.setPendingRefundTotal(0.0);
 
-        // Server-authoritative cost snapshot & inventory deduction
+        // 3. Atomic conditional stock deduction for each aggregated product
+        // Ensures no overselling, concurrent race safety, and strictly positive stock
+        Map<String, Double> successfullyDeducted = new HashMap<>();
+        Map<String, Product> updatedProducts = new HashMap<>();
+
+        for (Map.Entry<String, Double> entry : aggregatedQuantities.entrySet()) {
+            String prodId = entry.getKey();
+            Double requiredQty = entry.getValue();
+
+            Query query = new Query(Criteria.where("id").is(prodId)
+                    .and("storeId").is(storeId)
+                    .and("status").is("ACTIVE")
+                    .and("currentStock").gte(requiredQty));
+            Update update = new Update().inc("currentStock", -requiredQty).set("updatedAt", nowIst);
+
+            Product updated = mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), Product.class);
+            if (updated == null) {
+                // Stock deduction failed! Roll back any products already deducted in this request
+                rollbackDeductedStock(storeId, successfullyDeducted, nowIst);
+
+                // Fetch latest state to provide informative error message
+                Product currentProd = productRepository.findByStoreIdAndId(storeId, prodId).orElse(verifiedProducts.get(prodId));
+                double available = currentProd != null ? currentProd.getCurrentStock() : 0.0;
+                String prodName = currentProd != null ? currentProd.getName() : prodId;
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Insufficient stock for product: " + prodName + ". Requested: " + requiredQty + ", Available: " + available));
+            }
+
+            successfullyDeducted.put(prodId, requiredQty);
+            updatedProducts.put(prodId, updated);
+        }
+
+        // 4. Generate per-store sequential receipt number & server-authoritative cost snapshot
+        sale.setReceiptNumber(generateNextReceiptNumber(storeId, nowIst.getYear()));
+        List<InventoryTransaction> transactionsToSave = new ArrayList<>();
+        List<Notification> notificationsToSave = new ArrayList<>();
+
         for (Sale.SaleItem item : sale.getItems()) {
-            Product product = verifiedProducts.get(item.getProductId());
+            Product originalProduct = verifiedProducts.get(item.getProductId());
+            Product updatedProduct = updatedProducts.get(item.getProductId());
+
             if (item.getSaleItemId() == null || item.getSaleItemId().trim().isEmpty()) {
                 item.setSaleItemId(UUID.randomUUID().toString());
             }
             // Never trust client-supplied costPrice; never silently substitute 0 for missing product cost
-            item.setCostPrice(product.getCostPrice() > 0 ? product.getCostPrice() : null);
+            item.setCostPrice(originalProduct.getCostPrice() > 0 ? originalProduct.getCostPrice() : null);
 
-            double newStock = Math.max(0, product.getCurrentStock() - item.getQuantity());
-            product.setCurrentStock(newStock);
-            product.setUpdatedAt(nowIst);
-            productRepository.save(product);
+            double remainingStock = updatedProduct != null ? updatedProduct.getCurrentStock() : 0.0;
 
             InventoryTransaction tx = new InventoryTransaction(
-                    product.getId(),
-                    product.getName(),
+                    originalProduct.getId(),
+                    originalProduct.getName(),
                     "SALE",
                     -item.getQuantity(),
-                    newStock,
+                    remainingStock,
                     "POS_SALE",
                     sale.getReceiptNumber(),
                     username,
-                    "POS Checkout item: " + product.getName()
+                    "POS Checkout item: " + originalProduct.getName()
             );
             tx.setStoreId(storeId);
-            transactionRepository.save(tx);
+            transactionsToSave.add(tx);
+        }
 
-            if (newStock <= product.getMinStockLevel()) {
+        // Check low-stock threshold per unique product deducted
+        for (Map.Entry<String, Product> prodEntry : updatedProducts.entrySet()) {
+            Product prod = prodEntry.getValue();
+            if (prod.getCurrentStock() <= prod.getMinStockLevel()) {
                 Notification notif = new Notification(
-                        "Low Stock Alert: " + product.getName(),
-                        "Stock decreased to " + newStock + " " + product.getUnit() + " (Min: " + product.getMinStockLevel() + ")",
+                        "Low Stock Alert: " + prod.getName(),
+                        "Stock decreased to " + prod.getCurrentStock() + " " + prod.getUnit() + " (Min: " + prod.getMinStockLevel() + ")",
                         "LOW_STOCK",
                         "HIGH",
                         "inventory.html"
                 );
                 notif.setStoreId(storeId);
-                notificationRepository.save(notif);
+                notificationsToSave.add(notif);
             }
         }
 
-        if (targetCustomer != null) {
-            int earnedPoints = (int)(sale.getGrandTotal() / 100);
-            targetCustomer.setLoyaltyPoints(targetCustomer.getLoyaltyPoints() + earnedPoints);
-            targetCustomer.setTotalSpent(targetCustomer.getTotalSpent() + sale.getGrandTotal());
-            targetCustomer.setOrdersCount(targetCustomer.getOrdersCount() + 1);
-            if (targetCustomer.getTotalSpent() > 20000) targetCustomer.setTier("GOLD");
-            else if (targetCustomer.getTotalSpent() > 5000) targetCustomer.setTier("SILVER");
-            customerRepository.save(targetCustomer);
+        // 5. Persist sale and inventory records with strict failure recovery
+        List<String> persistedTxIds = new ArrayList<>();
+        Integer originalLoyalty = targetCustomer != null ? targetCustomer.getLoyaltyPoints() : null;
+        Double originalSpent = targetCustomer != null ? targetCustomer.getTotalSpent() : null;
+        Integer originalOrders = targetCustomer != null ? targetCustomer.getOrdersCount() : null;
+        String originalTier = targetCustomer != null ? targetCustomer.getTier() : null;
+        boolean customerMutated = false;
+
+        try {
+            // A. Save inventory ledger entries
+            List<InventoryTransaction> savedTxs = transactionRepository.saveAll(transactionsToSave);
+            for (InventoryTransaction tx : savedTxs) {
+                if (tx.getId() != null) persistedTxIds.add(tx.getId());
+            }
+
+            // B. Non-critical notifications (safeguarded against crashing checkout)
+            if (!notificationsToSave.isEmpty()) {
+                try {
+                    notificationRepository.saveAll(notificationsToSave);
+                } catch (Exception notifEx) {
+                    logger.warn("Non-critical notification save failed during checkout for store {}: {}", storeId, notifEx.getMessage());
+                }
+            }
+
+            // C. Update customer loyalty if customer attached
+            if (targetCustomer != null) {
+                int earnedPoints = (int)(sale.getGrandTotal() / 100);
+                targetCustomer.setLoyaltyPoints(targetCustomer.getLoyaltyPoints() + earnedPoints);
+                targetCustomer.setTotalSpent(targetCustomer.getTotalSpent() + sale.getGrandTotal());
+                targetCustomer.setOrdersCount(targetCustomer.getOrdersCount() + 1);
+                if (targetCustomer.getTotalSpent() > 20000) targetCustomer.setTier("GOLD");
+                else if (targetCustomer.getTotalSpent() > 5000) targetCustomer.setTier("SILVER");
+                customerRepository.save(targetCustomer);
+                customerMutated = true;
+            }
+
+            // D. Persist primary Sale entity
+            Sale saved = saleRepository.save(sale);
+            return ResponseEntity.ok(ApiResponse.success("Checkout processed successfully", saved));
+
+        } catch (DuplicateKeyException dke) {
+            // Concurrent duplicate idempotency key race condition caught by MongoDB unique partial index
+            cleanupFailedCheckout(storeId, successfullyDeducted, persistedTxIds, targetCustomer, customerMutated, originalLoyalty, originalSpent, originalOrders, originalTier, nowIst);
+            if (sale.getIdempotencyKey() != null) {
+                java.util.Optional<Sale> existing = saleRepository.findByStoreIdAndIdempotencyKey(storeId, sale.getIdempotencyKey());
+                if (existing.isPresent()) {
+                    Sale existingSale = existing.get();
+                    if (existingSale.getIdempotencyFingerprint() != null && !existingSale.getIdempotencyFingerprint().equals(requestFingerprint)) {
+                        return ResponseEntity.status(409).body(ApiResponse.error("Idempotency conflict: key '" + sale.getIdempotencyKey() + "' has already been used with different checkout items or customer."));
+                    }
+                    return ResponseEntity.ok(ApiResponse.success("Checkout processed successfully (idempotent)", existingSale));
+                }
+            }
+            return ResponseEntity.status(409).body(ApiResponse.error("Concurrent checkout request detected for idempotency key: " + sale.getIdempotencyKey()));
+
+        } catch (Exception ex) {
+            // Any persistence failure: cleanly compensate deducted stock, delete orphaned ledger rows, and revert customer
+            logger.error("Checkout persistence failure for store {}: {}. Initiating compensating recovery.", storeId, ex.getMessage(), ex);
+            cleanupFailedCheckout(storeId, successfullyDeducted, persistedTxIds, targetCustomer, customerMutated, originalLoyalty, originalSpent, originalOrders, originalTier, nowIst);
+            return ResponseEntity.status(500).body(ApiResponse.error("Checkout persistence failed: " + ex.getMessage()));
+        }
+    }
+
+    private String computePayloadFingerprint(Sale sale) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            StringBuilder sb = new StringBuilder();
+            if (sale.getCustomerId() != null) sb.append("cid:").append(sale.getCustomerId().trim()).append(";");
+            if (sale.getCustomerPhone() != null) sb.append("phone:").append(sale.getCustomerPhone().trim()).append(";");
+
+            // Sort products by ID to produce deterministic fingerprint regardless of line ordering
+            Map<String, Double> sortedQuantities = new TreeMap<>();
+            if (sale.getItems() != null) {
+                for (Sale.SaleItem item : sale.getItems()) {
+                    if (item.getProductId() != null) {
+                        String pid = item.getProductId().trim();
+                        sortedQuantities.put(pid, sortedQuantities.getOrDefault(pid, 0.0) + item.getQuantity());
+                    }
+                }
+            }
+            for (Map.Entry<String, Double> e : sortedQuantities.entrySet()) {
+                sb.append(e.getKey()).append("=").append(e.getValue()).append(";");
+            }
+            byte[] hash = md.digest(sb.toString().getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            return String.valueOf(sale.hashCode());
+        }
+    }
+
+    /**
+     * Atomically allocates the next sequential receipt number for the given store,
+     * starting at 1 when a new store makes its first sale.
+     */
+    private String generateNextReceiptNumber(String storeId, int year) {
+        Query counterQuery = new Query(Criteria.where("_id").is(storeId));
+        Update counterUpdate = new Update().inc("seq", 1L);
+        Document counterDoc = mongoTemplate.findAndModify(
+                counterQuery,
+                counterUpdate,
+                FindAndModifyOptions.options().returnNew(true).upsert(true),
+                Document.class,
+                "receipt_counters"
+        );
+        long seq = counterDoc != null && counterDoc.get("seq") != null
+                ? ((Number) counterDoc.get("seq")).longValue()
+                : 1L;
+        return String.format("RCP-%d-%05d", year, seq);
+    }
+
+    private void cleanupFailedCheckout(String storeId,
+                                       Map<String, Double> successfullyDeducted,
+                                       List<String> persistedTxIds,
+                                       Customer customer,
+                                       boolean customerMutated,
+                                       Integer origLoyalty,
+                                       Double origSpent,
+                                       Integer origOrders,
+                                       String origTier,
+                                       LocalDateTime nowIst) {
+        // 1. Compensating stock rollback
+        rollbackDeductedStock(storeId, successfullyDeducted, nowIst);
+
+        // 2. Remove orphaned inventory transactions
+        if (persistedTxIds != null && !persistedTxIds.isEmpty()) {
+            try {
+                Query deleteQuery = new Query(Criteria.where("id").in(persistedTxIds).and("storeId").is(storeId));
+                mongoTemplate.remove(deleteQuery, InventoryTransaction.class);
+            } catch (Exception ex) {
+                logger.error("CRITICAL: Failed to clean up orphaned inventory transactions {} for store {}: {}", persistedTxIds, storeId, ex.getMessage());
+            }
         }
 
-        Sale saved = saleRepository.save(sale);
-        return ResponseEntity.ok(ApiResponse.success("Checkout processed successfully", saved));
+        // 3. Revert mutated customer state
+        if (customerMutated && customer != null && customer.getId() != null) {
+            try {
+                customer.setLoyaltyPoints(origLoyalty != null ? origLoyalty : 0);
+                customer.setTotalSpent(origSpent != null ? origSpent : 0.0);
+                customer.setOrdersCount(origOrders != null ? origOrders : 0);
+                customer.setTier(origTier != null ? origTier : "BRONZE");
+                customerRepository.save(customer);
+            } catch (Exception ex) {
+                logger.error("CRITICAL: Failed to revert customer {} state for store {}: {}", customer.getId(), storeId, ex.getMessage());
+            }
+        }
+    }
+
+    private void rollbackDeductedStock(String storeId, Map<String, Double> successfullyDeducted, LocalDateTime nowIst) {
+        for (Map.Entry<String, Double> entry : successfullyDeducted.entrySet()) {
+            try {
+                Query rollbackQuery = new Query(Criteria.where("id").is(entry.getKey()).and("storeId").is(storeId));
+                Update rollbackUpdate = new Update().inc("currentStock", entry.getValue()).set("updatedAt", nowIst);
+                var updateResult = mongoTemplate.updateFirst(rollbackQuery, rollbackUpdate, Product.class);
+                if (updateResult.getModifiedCount() == 0) {
+                    logger.error("CRITICAL: Stock rollback failed to modify product {} in store {}. Quantity to restore: {}", entry.getKey(), storeId, entry.getValue());
+                }
+            } catch (Exception e) {
+                logger.error("CRITICAL: Exception occurred while rolling back stock for product {} in store {}: {}", entry.getKey(), storeId, e.getMessage(), e);
+            }
+        }
     }
 
     @GetMapping("/sales")

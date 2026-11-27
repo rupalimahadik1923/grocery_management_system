@@ -68,6 +68,33 @@ export const Layout = {
         </div>
       </aside>
     `;
+
+    const navEl = sidebar.querySelector('.sidebar-nav');
+    if (navEl) {
+      const savedScroll = sessionStorage.getItem('sidebarScrollTop');
+      if (savedScroll !== null) {
+        navEl.scrollTop = parseInt(savedScroll, 10) || 0;
+      }
+
+      const activeItem = navEl.querySelector('.nav-item.active');
+      if (activeItem) {
+        const navRect = navEl.getBoundingClientRect();
+        const itemRect = activeItem.getBoundingClientRect();
+        if (itemRect.top < navRect.top || itemRect.bottom > navRect.bottom) {
+          activeItem.scrollIntoView({ block: 'nearest' });
+        }
+      }
+
+      navEl.addEventListener('scroll', () => {
+        sessionStorage.setItem('sidebarScrollTop', String(navEl.scrollTop));
+      }, { passive: true });
+
+      navEl.querySelectorAll('.nav-item').forEach(link => {
+        link.addEventListener('click', () => {
+          sessionStorage.setItem('sidebarScrollTop', String(navEl.scrollTop));
+        });
+      });
+    }
   },
 
   renderTopbar(title, user) {

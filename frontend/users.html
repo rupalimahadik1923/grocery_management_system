@@ -10,43 +10,210 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop User Management UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 900px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
     }
-    .metric-mini-val {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--gray-900);
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     .metric-mini-lbl {
       font-size: 12px;
       color: var(--gray-500);
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
+    .metric-mini-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1.15;
+    }
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
+    }
+    .metric-mini-icon.blue {
+      background: var(--accent-blue-light);
+      border-color: #bfdbfe;
+    }
+    .metric-mini-icon.purple {
+      background: var(--accent-purple-light);
+      border-color: #ddd6fe;
+    }
+
+    /* Filter Toolbar */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .role-filter-select {
+      width: 190px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 20px;
+      font-size: 13.5px;
+    }
+    .table-actions-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-table-action {
+      height: 34px;
+      padding: 0 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      border: 1px solid var(--gray-300);
+      background: #ffffff;
+      color: var(--gray-700);
+      transition: all var(--transition-fast);
+      box-shadow: none;
+    }
+    .btn-table-action:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-400);
+      color: var(--gray-900);
+      transform: translateY(-1px);
+    }
+    .btn-table-action-danger {
+      color: #be123c;
+      border-color: #fecdd3;
+      background: #fff1f2;
+    }
+    .btn-table-action-danger:hover {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: #9f1239;
+    }
+    .access-guide-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1100px) {
+      .access-guide-grid {
+        grid-template-columns: repeat(2, minmax(190px, 1fr));
+      }
+    }
+    @media (max-width: 640px) {
+      .access-guide-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .access-role-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .access-role-card h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .access-role-card p {
+      font-size: 12px;
+      color: var(--gray-600);
+      line-height: 1.4;
+      margin: 0;
+    }
+    .role-inline-select {
+      height: 32px;
+      padding: 4px 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-300);
+      background: #ffffff;
+      color: var(--gray-800);
+      cursor: pointer;
+    }
+    .role-inline-select:disabled {
+      background: var(--gray-100);
+      color: var(--gray-500);
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -56,43 +223,65 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- Role Statistics Ribbon -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-users">0</div>
               <div class="metric-mini-lbl">Active Staff Accounts</div>
+              <div class="metric-mini-val" id="metric-total-users">0</div>
             </div>
-            <div style="font-size: 30px;">👥</div>
+            <div class="metric-mini-icon purple">👥</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-cashiers" style="color: var(--primary-700);">0</div>
               <div class="metric-mini-lbl">POS Cashiers</div>
+              <div class="metric-mini-val" id="metric-cashiers" style="color: var(--primary-700);">0</div>
             </div>
-            <div style="font-size: 30px;">🛒</div>
+            <div class="metric-mini-icon">🛒</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-managers" style="color: var(--accent-blue);">0</div>
               <div class="metric-mini-lbl">Store Managers</div>
+              <div class="metric-mini-val" id="metric-managers" style="color: var(--accent-blue);">0</div>
             </div>
-            <div style="font-size: 30px;">📊</div>
+            <div class="metric-mini-icon blue">📊</div>
+          </div>
+        </div>
+
+        <!-- Role Access & Permissions Guide -->
+        <div class="access-guide-grid">
+          <div class="access-role-card">
+            <h4><span>🛒 CASHIER</span><span class="badge badge-success">POS</span></h4>
+            <p>Access to POS Checkout, Sales History, Returns &amp; Refunds, and Customers.</p>
+          </div>
+          <div class="access-role-card">
+            <h4><span>📦 INVENTORY_STAFF</span><span class="badge badge-info">STOCK</span></h4>
+            <p>Access to Dashboard, Products, Inventory &amp; Batches, and Alerts.</p>
+          </div>
+          <div class="access-role-card">
+            <h4><span>📊 STORE_MANAGER</span><span class="badge badge-warning">OPS</span></h4>
+            <p>Full store operations: POS, Inventory, Purchases, Suppliers, Expenses &amp; Reports.</p>
+          </div>
+          <div class="access-role-card">
+            <h4><span>🔐 ADMIN</span><span class="badge badge-danger">OWNER</span></h4>
+            <p>Full access including Employee Access Management and Store Settings.</p>
           </div>
         </div>
 
         <!-- Filter Toolbar -->
         <div class="toolbar-container">
-          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
-            <input 
-              type="text" 
-              id="user-search-input" 
-              class="form-control" 
-              style="max-width: 280px;" 
-              placeholder="Search staff by username, name..." 
-            />
-            <select id="user-role-filter" class="form-control" style="max-width: 180px;">
+          <div class="toolbar-filters">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="user-search-input"
+                class="form-control"
+                placeholder="Search staff by username, name, or email..."
+              />
+            </div>
+            <select id="user-role-filter" class="form-control role-filter-select">
               <option value="ALL">All Roles</option>
               <option value="ADMIN">ADMIN</option>
               <option value="STORE_MANAGER">STORE_MANAGER</option>
@@ -100,21 +289,24 @@
               <option value="INVENTORY_STAFF">INVENTORY_STAFF</option>
             </select>
           </div>
-          <button class="btn btn-primary" id="btn-add-user">➕ Add New Staff User</button>
+          <button type="button" class="btn btn-primary btn-toolbar" id="btn-add-user">
+            <span class="btn-icon-circle">+</span>
+            <span>Add New Staff User</span>
+          </button>
         </div>
 
         <!-- Staff Roster Table -->
         <div class="table-container">
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
-                <th>Full Name & Username</th>
-                <th>Role</th>
+                <th>Full Name &amp; Username</th>
+                <th style="text-align: center; white-space: nowrap;">Role</th>
                 <th>Email Address</th>
-                <th>Phone Number</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style="text-align: right;">Action</th>
+                <th style="white-space: nowrap;">Phone Number</th>
+                <th style="text-align: center; white-space: nowrap;">Status</th>
+                <th style="text-align: center; white-space: nowrap;">Created</th>
+                <th style="text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
             <tbody id="users-table-body">
@@ -133,30 +325,30 @@
 
   <!-- ADD / EDIT USER MODAL -->
   <div class="modal-overlay" id="user-modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 540px;">
       <div class="modal-header">
         <h3 class="modal-title" id="user-modal-title">Add Staff Member</h3>
-        <button class="modal-close-btn" id="close-user-modal">&times;</button>
+        <button type="button" class="modal-close-btn" id="close-user-modal">&times;</button>
       </div>
       <form id="user-form">
         <div class="modal-body" style="padding: 20px 24px;">
           <input type="hidden" id="user-id" />
 
           <div class="form-group">
-            <label class="form-label">Full Name *</label>
+            <label class="form-label" for="user-fullname">Full Name *</label>
             <input type="text" id="user-fullname" class="form-control" required placeholder="e.g. Ramesh Kumar" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Username *</label>
+              <label class="form-label" for="user-username">Username *</label>
               <input type="text" id="user-username" class="form-control" required placeholder="ramesh1" />
             </div>
             <div class="form-group">
-              <label class="form-label">Role *</label>
+              <label class="form-label" for="user-role">Role *</label>
               <select id="user-role" class="form-control" required>
                 <option value="CASHIER">CASHIER (POS Checkout)</option>
-                <option value="STORE_MANAGER">STORE_MANAGER (Inventory & PO)</option>
+                <option value="STORE_MANAGER">STORE_MANAGER (Inventory &amp; PO)</option>
                 <option value="INVENTORY_STAFF">INVENTORY_STAFF (Stock Receiving)</option>
                 <option value="ADMIN">ADMIN (Full Access)</option>
               </select>
@@ -165,22 +357,22 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Email Address *</label>
+              <label class="form-label" for="user-email">Email Address *</label>
               <input type="email" id="user-email" class="form-control" required placeholder="staff@grocery.local" />
             </div>
             <div class="form-group">
-              <label class="form-label">Phone Number</label>
+              <label class="form-label" for="user-phone">Phone Number</label>
               <input type="text" id="user-phone" class="form-control" placeholder="9876543210" />
             </div>
           </div>
 
-          <div class="form-group" id="pwd-field-group">
-            <label class="form-label">Initial Password *</label>
+          <div class="form-group" id="pwd-field-group" style="margin-bottom: 0;">
+            <label class="form-label" for="user-password">Initial Password *</label>
             <input type="password" id="user-password" class="form-control" placeholder="Minimum 6 characters" />
           </div>
         </div>
 
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-secondary" id="btn-cancel-user">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-save-user">Save Staff User</button>
         </div>
@@ -191,15 +383,27 @@
   <script type="module">
     import { Layout } from './js/layout.js';
     import { Api } from './js/api.js';
+    import { Auth } from './js/auth.js';
 
     Layout.init({ activePage: 'users', title: 'User Management & Permissions' });
 
+    const currentUser = Auth.getUser() || {};
     let users = [];
     const tableBody = document.getElementById('users-table-body');
     const searchInput = document.getElementById('user-search-input');
     const roleFilter = document.getElementById('user-role-filter');
     const userModal = document.getElementById('user-modal');
     const userForm = document.getElementById('user-form');
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function loadUsers() {
       try {
@@ -223,8 +427,8 @@
       const q = searchInput.value.toLowerCase().trim();
       const role = roleFilter.value;
 
-      let filtered = users.filter(u => {
-        const matchesQ = !q || 
+      const filtered = users.filter(u => {
+        const matchesQ = !q ||
           (u.username && u.username.toLowerCase().includes(q)) ||
           (u.fullName && u.fullName.toLowerCase().includes(q)) ||
           (u.email && u.email.toLowerCase().includes(q));
@@ -239,30 +443,48 @@
       }
 
       tableBody.innerHTML = filtered.map(u => {
-        let roleBadge = `<span class="badge badge-info">STAFF</span>`;
-        if (u.role === 'ADMIN') roleBadge = `<span class="badge badge-danger">ADMIN</span>`;
-        else if (u.role === 'STORE_MANAGER') roleBadge = `<span class="badge badge-warning">MANAGER</span>`;
-        else if (u.role === 'CASHIER') roleBadge = `<span class="badge badge-success">CASHIER</span>`;
+        const isSelf = currentUser.id && u.id === currentUser.id;
+        const isActive = (u.status || 'ACTIVE') === 'ACTIVE';
 
         return `
           <tr>
             <td>
-              <div style="font-weight: 700; color: var(--gray-900);">${u.fullName || u.username}</div>
-              <div style="font-size: 11px; font-family: monospace; color: var(--gray-500);">@${u.username}</div>
+              <div style="font-weight: 700; color: var(--gray-900);">${escapeHtml(u.fullName || u.username)} ${isSelf ? '<span class="badge badge-neutral" style="margin-left: 4px;">You</span>' : ''}</div>
+              <div style="font-size: 11.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--gray-500);">@${escapeHtml(u.username)}</div>
             </td>
-            <td>${roleBadge}</td>
-            <td style="color: var(--gray-600);">${u.email || '-'}</td>
-            <td>${u.phone || '-'}</td>
-            <td><span class="badge ${u.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}">${u.status || 'ACTIVE'}</span></td>
-            <td style="font-size: 12px; color: var(--gray-500);">${u.createdAt ? u.createdAt.slice(0, 10) : '-'}</td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary btn-reset-pwd" data-id="${u.id}" data-name="${u.username}" style="padding: 4px 8px; font-size: 11px;" title="Reset Password">🔑</button>
-              <button class="btn btn-secondary btn-del-user" data-id="${u.id}" style="padding: 4px 8px; font-size: 11px; color: var(--accent-rose);" title="Delete User">🗑️</button>
+            <td style="text-align: center; white-space: nowrap;">
+              <select class="role-inline-select user-role-select" data-id="${escapeHtml(u.id)}" ${isSelf ? 'disabled title="You cannot change your own role"' : 'title="Change employee access role"'}>
+                <option value="CASHIER" ${u.role === 'CASHIER' ? 'selected' : ''}>CASHIER (POS)</option>
+                <option value="INVENTORY_STAFF" ${u.role === 'INVENTORY_STAFF' ? 'selected' : ''}>INVENTORY_STAFF</option>
+                <option value="STORE_MANAGER" ${u.role === 'STORE_MANAGER' ? 'selected' : ''}>STORE_MANAGER</option>
+                <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+              </select>
+            </td>
+            <td style="color: var(--gray-600);">${escapeHtml(u.email || '-')}</td>
+            <td style="white-space: nowrap;">${escapeHtml(u.phone || '-')}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'}">${escapeHtml(u.status || 'ACTIVE')}</span>
+            </td>
+            <td style="text-align: center; font-size: 13px; color: var(--gray-500); white-space: nowrap;">${u.createdAt ? escapeHtml(String(u.createdAt).slice(0, 10)) : '-'}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <div class="table-actions-wrap">
+                <button type="button" class="btn-table-action btn-toggle-status" data-id="${escapeHtml(u.id)}" data-status="${isActive ? 'INACTIVE' : 'ACTIVE'}" ${isSelf ? 'disabled' : ''} title="${isActive ? 'Disable employee login' : 'Enable employee login'}">
+                  ${isActive ? '⏸️ Disable' : '▶️ Enable'}
+                </button>
+                <button type="button" class="btn-table-action btn-reset-pwd" data-id="${escapeHtml(u.id)}" data-name="${escapeHtml(u.username)}" title="Reset Password">🔑 Reset</button>
+                <button type="button" class="btn-table-action btn-table-action-danger btn-del-user" data-id="${escapeHtml(u.id)}" ${isSelf ? 'disabled' : ''} title="Delete User">🗑️</button>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
+      tableBody.querySelectorAll('.user-role-select').forEach(sel => {
+        sel.addEventListener('change', () => updateUserRole(sel.dataset.id, sel.value));
+      });
+      tableBody.querySelectorAll('.btn-toggle-status').forEach(b => {
+        b.addEventListener('click', () => updateUserStatus(b.dataset.id, b.dataset.status));
+      });
       tableBody.querySelectorAll('.btn-reset-pwd').forEach(b => {
         b.addEventListener('click', () => resetPassword(b.dataset.id, b.dataset.name));
       });
@@ -316,6 +538,27 @@
       }
     });
 
+    async function updateUserRole(id, newRole) {
+      try {
+        await Api.put(`/users/${id}/role`, { role: newRole });
+        showToast(`Employee role updated to ${newRole}`, 'success');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Failed to update role', 'error');
+        await loadUsers();
+      }
+    }
+
+    async function updateUserStatus(id, newStatus) {
+      try {
+        await Api.put(`/users/${id}/status`, { status: newStatus });
+        showToast(`Employee account ${newStatus === 'ACTIVE' ? 'enabled' : 'disabled'}`, 'success');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Failed to update status', 'error');
+      }
+    }
+
     async function resetPassword(id, username) {
       const newPwd = prompt(`Enter new password for @${username}:`, 'password123');
       if (!newPwd) return;
@@ -344,7 +587,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

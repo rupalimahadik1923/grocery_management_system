@@ -2,6 +2,7 @@ package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,7 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "purchase_orders")
-@CompoundIndex(name = "storeId_status_createdAt_idx", def = "{'storeId': 1, 'status': 1, 'createdAt': -1}")
+@CompoundIndexes({
+    @CompoundIndex(name = "storeId_status_createdAt_idx", def = "{'storeId': 1, 'status': 1, 'createdAt': -1}"),
+    @CompoundIndex(name = "storeId_receiveIdempotencyKey_partial_idx", def = "{'storeId': 1, 'receiveIdempotencyKey': 1}", unique = true, partialFilter = "{'receiveIdempotencyKey': {'$type': 'string'}}")
+})
 public class PurchaseOrder {
 
     @Id
@@ -34,8 +38,12 @@ public class PurchaseOrder {
     private double totalAmount;
 
     @Indexed
-    private String status = "DRAFT"; // DRAFT, ORDERED, RECEIVED, CANCELLED
+    private String status = "DRAFT"; // DRAFT, ORDERED, RECEIVING, RECEIVED, CANCELLED
     private String notes;
+    private String receiveIdempotencyKey;
+    private String receiveIdempotencyFingerprint;
+    private LocalDateTime receivedAt;
+    private String receivedBy;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public static class PurchaseOrderItem {
@@ -122,6 +130,18 @@ public class PurchaseOrder {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getReceiveIdempotencyKey() { return receiveIdempotencyKey; }
+    public void setReceiveIdempotencyKey(String receiveIdempotencyKey) { this.receiveIdempotencyKey = receiveIdempotencyKey; }
+
+    public String getReceiveIdempotencyFingerprint() { return receiveIdempotencyFingerprint; }
+    public void setReceiveIdempotencyFingerprint(String receiveIdempotencyFingerprint) { this.receiveIdempotencyFingerprint = receiveIdempotencyFingerprint; }
+
+    public LocalDateTime getReceivedAt() { return receivedAt; }
+    public void setReceivedAt(LocalDateTime receivedAt) { this.receivedAt = receivedAt; }
+
+    public String getReceivedBy() { return receivedBy; }
+    public void setReceivedBy(String receivedBy) { this.receivedBy = receivedBy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

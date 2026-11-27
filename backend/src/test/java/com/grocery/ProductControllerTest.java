@@ -66,6 +66,9 @@ class ProductControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     private Store storeA;
     private Store storeB;
     private String tokenStoreA;
@@ -353,7 +356,7 @@ class ProductControllerTest {
                         .content(objectMapper.writeValueAsString(prodB)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.storeId").value(storeB.getId()))
-                .andExpect(jsonPath("$.data.sku").value(sharedSku));
+                .andExpect(jsonPath("$.data.sku").value(sharedSku.toUpperCase()));
     }
 
     @Test
@@ -916,5 +919,206 @@ class ProductControllerTest {
 
         // Store A product is still ACTIVE
         assertEquals("ACTIVE", productRepository.findByStoreIdAndId(storeA.getId(), idA).orElseThrow().getStatus());
+    }
+
+    @Test
+    @DisplayName("Phase 3B: SKU should be normalized to uppercase and trimmed on creation")
+    void shouldNormalizeSkuOnCreation() throws Exception {
+        Product prod = new Product();
+        prod.setName("Normalized SKU Product");
+        prod.setSku("  sku-norm-" + UUID.randomUUID().toString().substring(0, 4) + "  ");
+        prod.setCostPrice(15.0);
+        prod.setSellingPrice(25.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString()).path("data").path("id").asText();
+        Product saved = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals(prod.getSku().trim().toUpperCase(), saved.getSku());
+    }
+
+    @Test
+    @DisplayName("Phase 3B: Blank barcode should be normalized to null on create and update")
+    void shouldNormalizeBlankBarcodeToNull() throws Exception {
+        Product prod = new Product();
+        prod.setName("Blank Barcode Product");
+        prod.setSku("SKU-BC-" + UUID.randomUUID().toString().substring(0, 4));
+        prod.setBarcode("   ");
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString()).path("data").path("id").asText();
+        Product saved = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertNull(saved.getBarcode());
+
+        // Update with non-empty barcode
+        com.grocery.dto.ProductUpdateRequest update1 = new com.grocery.dto.ProductUpdateRequest();
+        update1.setBarcode("  890123456789  ");
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update1)))
+                .andExpect(status().isOk());
+
+        assertEquals("890123456789", productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow().getBarcode());
+
+        // Update back with empty barcode -> should be normalized to null
+        com.grocery.dto.ProductUpdateRequest update2 = new com.grocery.dto.ProductUpdateRequest();
+        update2.setBarcode("");
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update2)))
+                .andExpect(status().isOk());
+
+        assertNull(productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow().getBarcode());
+    }
+
+    @Test
+    @DisplayName("Phase 3B: Category should be resolved authoritatively from DB and reject cross-store categories")
+    void shouldValidateCategoryAndDeriveName() throws Exception {
+        Category catStoreA = categoryRepository.save(new Category("Dairy A", "dairy-a", "🥛", "Desc", 1, storeA.getId()));
+        Category catStoreB = categoryRepository.save(new Category("Dairy B", "dairy-b", "🥛", "Desc", 1, storeB.getId()));
+
+        Product prod = new Product();
+        prod.setName("Category Test Product");
+        prod.setSku("SKU-CAT-" + UUID.randomUUID().toString().substring(0, 4));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+        prod.setCategoryId(catStoreA.getId());
+        prod.setCategoryName("Client Supplied Fake Name"); // Should be ignored & derived
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString()).path("data").path("id").asText();
+        Product saved = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals("Dairy A", saved.getCategoryName());
+
+        // Try to update with Category from Store B -> Reject 400
+        com.grocery.dto.ProductUpdateRequest updateCrossStore = new com.grocery.dto.ProductUpdateRequest();
+        updateCrossStore.setCategoryId(catStoreB.getId());
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateCrossStore)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("Category does not belong to your store")));
+
+        // Clear category explicitly with empty string
+        com.grocery.dto.ProductUpdateRequest updateClear = new com.grocery.dto.ProductUpdateRequest();
+        updateClear.setCategoryId("");
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateClear)))
+                .andExpect(status().isOk());
+
+        Product cleared = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertNull(cleared.getCategoryId());
+        assertNull(cleared.getCategoryName());
+    }
+
+    @Test
+    @DisplayName("Phase 3B: Partial update via DTO should preserve omitted fields and protect currentStock")
+    void shouldPreserveOmittedFieldsAndStockOnUpdate() throws Exception {
+        Product prod = new Product();
+        prod.setName("Full Product");
+        prod.setSku("SKU-FULL-" + UUID.randomUUID().toString().substring(0, 4));
+        prod.setCostPrice(50.0);
+        prod.setSellingPrice(80.0);
+        prod.setCurrentStock(100.0);
+        prod.setMinStockLevel(25.0);
+        prod.setTaxRate(12.0);
+        prod.setUnit("KG");
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString()).path("data").path("id").asText();
+
+        // Send partial update changing ONLY selling price
+        com.grocery.dto.ProductUpdateRequest partialUpdate = new com.grocery.dto.ProductUpdateRequest();
+        partialUpdate.setSellingPrice(95.0);
+
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(partialUpdate)))
+                .andExpect(status().isOk());
+
+        Product updated = productRepository.findByStoreIdAndId(storeA.getId(), id).orElseThrow();
+        assertEquals(95.0, updated.getSellingPrice());
+        assertEquals(50.0, updated.getCostPrice(), "Cost price should be preserved");
+        assertEquals(100.0, updated.getCurrentStock(), "Current stock should be preserved");
+        assertEquals(25.0, updated.getMinStockLevel(), "Min stock level should be preserved");
+        assertEquals(12.0, updated.getTaxRate(), "Tax rate should be preserved");
+        assertEquals("KG", updated.getUnit(), "Unit should be preserved");
+    }
+
+    @Test
+    @DisplayName("Phase 3B: PUT cannot bypass lifecycle to ARCHIVED or edit archived product")
+    void shouldProtectStatusTransitionsOnPut() throws Exception {
+        Product prod = new Product();
+        prod.setName("Status Protect Product");
+        prod.setSku("SKU-SP-" + UUID.randomUUID().toString().substring(0, 4));
+        prod.setCostPrice(10.0);
+        prod.setSellingPrice(20.0);
+
+        MvcResult res = mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prod)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = objectMapper.readTree(res.getResponse().getContentAsString()).path("data").path("id").asText();
+
+        // 1. Cannot set ARCHIVED directly via PUT
+        com.grocery.dto.ProductUpdateRequest archivePut = new com.grocery.dto.ProductUpdateRequest();
+        archivePut.setStatus("ARCHIVED");
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(archivePut)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("Archival must be performed through the delete/archive endpoint")));
+
+        // Archive product via status PATCH endpoint
+        mockMvc.perform(patch("/api/v1/products/" + id + "/status")
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("status", "ARCHIVED"))))
+                .andExpect(status().isOk());
+
+        // 2. Cannot edit an ARCHIVED product via PUT
+        com.grocery.dto.ProductUpdateRequest editArchived = new com.grocery.dto.ProductUpdateRequest();
+        editArchived.setName("Changed Name");
+        mockMvc.perform(put("/api/v1/products/" + id)
+                        .header("Authorization", "Bearer " + tokenStoreA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(editArchived)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsStringIgnoringCase("Cannot edit an archived product")));
     }
 }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,40 +25,49 @@
       border: 1px dashed #cbd5e1;
       box-shadow: var(--shadow-sm);
     }
+
     .receipt-header {
       text-align: center;
       margin-bottom: 12px;
     }
+
     .receipt-title {
       font-size: 16px;
       font-weight: bold;
       text-transform: uppercase;
     }
+
     .receipt-divider {
       border-top: 1px dashed #475569;
       margin: 8px 0;
     }
+
     .receipt-row {
       display: flex;
       justify-content: space-between;
       margin: 3px 0;
     }
+
     .receipt-row.bold {
       font-weight: bold;
     }
+
     .receipt-table {
       width: 100%;
       margin: 8px 0;
       border-collapse: collapse;
     }
+
     .receipt-table th {
       text-align: left;
       border-bottom: 1px dashed #475569;
       padding: 4px 0;
     }
+
     .receipt-table td {
       padding: 4px 0;
     }
+
     .receipt-footer {
       text-align: center;
       font-size: 11px;
@@ -77,6 +87,7 @@
       border-radius: var(--radius-md);
       margin: 16px 0;
     }
+
     .qr-placeholder {
       width: 160px;
       height: 160px;
@@ -99,6 +110,7 @@
       gap: 8px;
       margin-bottom: 16px;
     }
+
     .payment-tab-btn {
       flex: 1;
       padding: 10px;
@@ -111,6 +123,7 @@
       border: 1px solid transparent;
       transition: all var(--transition-fast);
     }
+
     .payment-tab-btn.active {
       background: var(--primary-600);
       color: #ffffff;
@@ -122,6 +135,7 @@
       flex-wrap: wrap;
       margin-top: 8px;
     }
+
     .quick-cash-pill {
       padding: 6px 12px;
       background: var(--gray-100);
@@ -131,6 +145,7 @@
       font-weight: 600;
       cursor: pointer;
     }
+
     .quick-cash-pill:hover {
       background: var(--gray-200);
     }
@@ -150,9 +165,12 @@
       body * {
         visibility: hidden;
       }
-      #receipt-print-area, #receipt-print-area * {
+
+      #receipt-print-area,
+      #receipt-print-area * {
         visibility: visible;
       }
+
       #receipt-print-area {
         position: absolute;
         left: 0;
@@ -162,6 +180,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="app-container">
     <div id="sidebar-container"></div>
@@ -172,20 +191,22 @@
           <!-- LEFT COLUMN: Product Catalog & Search -->
           <div class="pos-catalog-panel">
             <div class="pos-search-bar">
-              <input 
-                type="text" 
-                id="pos-barcode-input" 
-                class="form-control" 
-                placeholder="Scan barcode or type item name / SKU... (Press Enter to add)" 
-                autofocus 
-                autocomplete="off"
-              />
+              <div class="pos-search-wrapper">
+                <input type="text" id="pos-barcode-input" class="form-control"
+                  placeholder="Scan barcode or type item name / SKU... (Live filter / Enter)" autofocus
+                  autocomplete="off" />
+                <button type="button" class="pos-search-clear-btn" id="btn-clear-search" title="Clear search"
+                  aria-label="Clear search">
+                  &times;
+                </button>
+              </div>
               <button class="btn btn-secondary" id="btn-search-focus" title="Scan Barcode (F2)">
                 🔍 Scan
               </button>
             </div>
 
-            <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <div
+              style="font-size: 12px; color: var(--gray-500); margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap;">
               <span><span class="shortcut-badge">F2</span> Focus Scan</span>
               <span><span class="shortcut-badge">F4</span> Customer Lookup</span>
               <span><span class="shortcut-badge">F8</span> Tender / Pay</span>
@@ -217,7 +238,8 @@
                 <button class="btn btn-secondary" id="cart-customer-btn" style="padding: 6px 10px; font-size: 12px;">
                   👤 <span id="cart-customer-label">Walk-in</span>
                 </button>
-                <button class="btn btn-secondary" id="btn-clear-cart" title="Clear Order" style="padding: 6px 10px; color: var(--accent-rose);">
+                <button class="btn btn-secondary" id="btn-clear-cart" title="Clear Order"
+                  style="padding: 6px 10px; color: var(--accent-rose);">
                   🗑️
                 </button>
               </div>
@@ -236,14 +258,8 @@
               </div>
               <div class="summary-row" style="align-items: center;">
                 <span>Discount (%)</span>
-                <input 
-                  type="number" 
-                  id="cart-discount-input" 
-                  value="0" 
-                  min="0" 
-                  max="100" 
-                  style="width: 60px; padding: 2px 6px; font-size: 12px; text-align: right; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);"
-                />
+                <input type="number" id="cart-discount-input" value="0" min="0" max="100"
+                  style="width: 60px; padding: 2px 6px; font-size: 12px; text-align: right; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);" />
               </div>
               <div class="summary-row">
                 <span>CGST (2.5%)</span>
@@ -286,7 +302,8 @@
         </div>
         <div id="cust-lookup-status" style="font-size: 12px; margin-bottom: 12px;"></div>
       </div>
-      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+      <div class="modal-footer"
+        style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
         <button class="btn btn-secondary" id="btn-cancel-customer">Cancel</button>
         <button class="btn btn-primary" id="btn-save-customer">Attach Customer</button>
       </div>
@@ -301,8 +318,10 @@
         <button class="modal-close-btn" id="close-tender-modal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 20px 24px;">
-        <div style="background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 16px;">
-          <div style="font-size: 12px; color: var(--primary-800); font-weight: 600; text-transform: uppercase;">Amount To Pay</div>
+        <div
+          style="background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--primary-800); font-weight: 600; text-transform: uppercase;">Amount
+            To Pay</div>
           <div style="font-size: 28px; font-weight: 800; color: var(--primary-700);" id="tender-modal-total">₹0.00</div>
         </div>
 
@@ -316,7 +335,8 @@
         <div id="tender-cash-section">
           <div class="form-group">
             <label class="form-label">Tendered Cash Amount (₹)</label>
-            <input type="number" id="tender-amount-input" class="form-control" style="font-size: 18px; font-weight: 700;" placeholder="0.00" />
+            <input type="number" id="tender-amount-input" class="form-control"
+              style="font-size: 18px; font-weight: 700;" placeholder="0.00" />
             <div class="quick-cash-pills">
               <button class="quick-cash-pill" data-amount="EXACT">Exact</button>
               <button class="quick-cash-pill" data-amount="100">₹100</button>
@@ -325,7 +345,8 @@
               <button class="quick-cash-pill" data-amount="2000">₹2,000</button>
             </div>
           </div>
-          <div class="summary-row" style="font-size: 15px; font-weight: 600; padding: 8px 0; border-top: 1px dashed var(--gray-300);">
+          <div class="summary-row"
+            style="font-size: 15px; font-weight: 600; padding: 8px 0; border-top: 1px dashed var(--gray-300);">
             <span>Change Due:</span>
             <span id="tender-change-due" style="color: var(--primary-700);">₹0.00</span>
           </div>
@@ -348,12 +369,14 @@
           <div style="padding: 24px; text-align: center; background: var(--gray-50); border-radius: var(--radius-md);">
             <div style="font-size: 32px; margin-bottom: 8px;">💳</div>
             <div style="font-weight: 600; font-size: 14px;">Swipe or Insert Card on POS Terminal</div>
-            <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">Visa, Mastercard, RuPay accepted</div>
+            <div style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">Visa, Mastercard, RuPay accepted
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+      <div class="modal-footer"
+        style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
         <button class="btn btn-secondary" id="btn-cancel-tender">Cancel</button>
         <button class="btn btn-primary" id="btn-complete-payment" style="padding: 10px 20px;">
           ✅ Complete & Print Receipt
@@ -376,7 +399,8 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: space-between;">
+      <div class="modal-footer"
+        style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: space-between;">
         <button class="btn btn-secondary" id="btn-new-order">➕ New Order</button>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-primary" id="btn-print-receipt">🖨️ Print Receipt</button>
@@ -396,6 +420,8 @@
     let products = [];
     let categories = [];
     let selectedCategory = 'ALL';
+    let searchQuery = '';
+    let searchDebounceTimer = null;
     let cart = [];
     let attachedCustomer = null;
     let paymentMode = 'CASH';
@@ -406,6 +432,7 @@
 
     // Elements
     const barcodeInput = document.getElementById('pos-barcode-input');
+    const btnClearSearch = document.getElementById('btn-clear-search');
     const categoryPillsContainer = document.getElementById('pos-category-pills');
     const productGrid = document.getElementById('pos-product-grid');
     const cartList = document.getElementById('pos-cart-list');
@@ -438,7 +465,7 @@
       }
     });
 
-    // Barcode scanner / enter handler
+    // Barcode scanner / enter handler & live predictive search
     barcodeInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -446,29 +473,69 @@
       }
     });
 
+    barcodeInput.addEventListener('input', () => {
+      const val = barcodeInput.value.trim();
+      btnClearSearch.style.display = val.length > 0 ? 'block' : 'none';
+
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = val;
+        renderProductGrid();
+      }, 150);
+    });
+
+    btnClearSearch.addEventListener('click', () => {
+      barcodeInput.value = '';
+      searchQuery = '';
+      btnClearSearch.style.display = 'none';
+      renderProductGrid();
+      barcodeInput.focus();
+    });
+
     document.getElementById('btn-search-focus')?.addEventListener('click', () => {
       handleBarcodeInput(barcodeInput.value.trim());
     });
+
+    // Product status helper: tolerant of missing/null status or case variations
+    function isProductActive(p) {
+      if (!p) return false;
+      if (!p.status) return true; // Default to active if status field is omitted/legacy
+      const s = String(p.status).trim().toUpperCase();
+      return s === 'ACTIVE';
+    }
+
+    // Category matching helper: supports cat.id, cat._id, or category name matching
+    function matchesCategory(p, catId) {
+      if (!catId || catId === 'ALL') return true;
+      if (p.categoryId && String(p.categoryId) === String(catId)) return true;
+      if (p.category && String(p.category) === String(catId)) return true;
+      const catObj = categories.find(c => (c.id && String(c.id) === String(catId)) || (c._id && String(c._id) === String(catId)));
+      if (catObj && p.categoryName && p.categoryName.toLowerCase() === catObj.name.toLowerCase()) return true;
+      return false;
+    }
 
     function handleBarcodeInput(query) {
       if (!query) return;
       const lower = query.toLowerCase();
 
       // Find by exact barcode, SKU, or name match (ACTIVE products only)
-      let match = products.find(p => 
-        p.status === 'ACTIVE' && (
+      let match = products.find(p =>
+        isProductActive(p) && (
           (p.barcode && p.barcode.toLowerCase() === lower) ||
           (p.sku && p.sku.toLowerCase() === lower)
         )
       );
 
       if (!match) {
-        match = products.find(p => p.status === 'ACTIVE' && p.name.toLowerCase().includes(lower));
+        match = products.find(p => isProductActive(p) && p.name && p.name.toLowerCase().includes(lower));
       }
 
       if (match) {
         addToCart(match);
         barcodeInput.value = '';
+        searchQuery = '';
+        btnClearSearch.style.display = 'none';
+        renderProductGrid();
       } else {
         showToast('Product not found for: ' + query, 'error');
       }
@@ -477,32 +544,69 @@
     // Load Initial Data
     async function initPos() {
       try {
-        const [catsRes, prodsRes] = await Promise.all([
-          Api.get('/categories').catch(() => []),
-          Api.get('/products?status=ACTIVE').catch(() => [])
-        ]);
+        let catsRes = [];
+        let prodsRes = [];
 
-        categories = Array.isArray(catsRes) ? catsRes : (catsRes.data || []);
-        const rawProds = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
-        products = rawProds.filter(p => p.status === 'ACTIVE');
+        try {
+          catsRes = await Api.get('/categories');
+        } catch (catErr) {
+          console.warn('Failed to load categories:', catErr);
+        }
+
+        try {
+          prodsRes = await Api.get('/products?status=ACTIVE');
+        } catch (prodErr) {
+          console.warn('Failed to load /products?status=ACTIVE, attempting fallback to /products:', prodErr);
+          try {
+            prodsRes = await Api.get('/products');
+          } catch (fallbackErr) {
+            console.error('Failed to load products from server:', fallbackErr);
+            showToast('Unable to reach server. Please check your connection or session.', 'error');
+          }
+        }
+
+        categories = Array.isArray(catsRes) ? catsRes : (catsRes?.data || []);
+        const rawProds = Array.isArray(prodsRes) ? prodsRes : (prodsRes?.data || []);
+        products = rawProds.filter(isProductActive);
+
+        // Fallback: If status=ACTIVE returned 0 products but raw /products has items, fetch all products
+        if (products.length === 0 && rawProds.length === 0) {
+          try {
+            const fallbackProds = await Api.get('/products');
+            const fallbackList = Array.isArray(fallbackProds) ? fallbackProds : (fallbackProds?.data || []);
+            if (fallbackList.length > 0) {
+              products = fallbackList.filter(isProductActive);
+            }
+          } catch (_) { }
+        }
 
         renderCategoryPills();
         renderProductGrid();
         renderCart();
       } catch (err) {
         console.error('Failed to load POS catalog:', err);
-        showToast('Error loading catalog data', 'error');
+        showToast('Error loading catalog: ' + (err.message || 'Unknown error'), 'error');
+        renderProductGrid();
       }
     }
 
     function renderCategoryPills() {
+      const activeProducts = products.filter(isProductActive);
+      const totalCount = activeProducts.length;
+
       categoryPillsContainer.innerHTML = `
-        <button class="category-pill ${selectedCategory === 'ALL' ? 'active' : ''}" data-category="ALL">All Items</button>
-        ${categories.map(cat => `
-          <button class="category-pill ${selectedCategory === cat.id ? 'active' : ''}" data-category="${cat.id}">
-            ${cat.icon || '📦'} ${cat.name}
-          </button>
-        `).join('')}
+        <button class="category-pill ${selectedCategory === 'ALL' ? 'active' : ''}" data-category="ALL">
+          All Items <span class="category-pill-count">${totalCount}</span>
+        </button>
+        ${categories.map(cat => {
+        const catId = cat.id || cat._id;
+        const catCount = activeProducts.filter(p => matchesCategory(p, catId)).length;
+        return `
+            <button class="category-pill ${selectedCategory === catId ? 'active' : ''}" data-category="${escapeHtml(catId)}">
+              ${escapeHtml(cat.icon || '📦')} ${escapeHtml(cat.name)} <span class="category-pill-count">${catCount}</span>
+            </button>
+          `;
+      }).join('')}
       `;
 
       categoryPillsContainer.querySelectorAll('.category-pill').forEach(btn => {
@@ -514,42 +618,185 @@
       });
     }
 
+    // Safe HTML escaping helper to prevent XSS
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Safe search match highlighter
+    function highlightSearchMatch(text, query) {
+      if (!text) return '';
+      const safeText = escapeHtml(text);
+      if (!query || !query.trim()) return safeText;
+
+      const trimmed = query.trim();
+      // Escape regex special chars
+      const escapedQuery = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedQuery})`, 'gi');
+      return safeText.replace(regex, '<mark class="highlight-match">$1</mark>');
+    }
+
+    // Get aggregated quantity in current cart for a product
+    function getCartQuantityForProduct(productId) {
+      return cart
+        .filter(item => item.productId === productId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    // Safe stock resolution helper: distinguishes valid numbers from missing/null/invalid
+    function resolveStockStatus(prod) {
+      if (!prod || prod.currentStock === null || prod.currentStock === undefined || prod.currentStock === '') {
+        return { isValid: false, isAvailable: false, stock: null, badgeClass: 'unknown-stock', badgeText: '? Unknown Stock', displayQty: 'Unknown' };
+      }
+      const num = Number(prod.currentStock);
+      if (Number.isNaN(num)) {
+        return { isValid: false, isAvailable: false, stock: null, badgeClass: 'unknown-stock', badgeText: '? Invalid Stock', displayQty: 'Invalid' };
+      }
+      const minStock = (prod.minStockLevel !== null && prod.minStockLevel !== undefined && !Number.isNaN(Number(prod.minStockLevel)))
+        ? Number(prod.minStockLevel)
+        : 10;
+
+      if (num <= 0) {
+        return { isValid: true, isAvailable: false, stock: num, badgeClass: 'out-stock', badgeText: '● Out of Stock', displayQty: String(num) };
+      }
+      if (num <= minStock) {
+        return { isValid: true, isAvailable: true, stock: num, badgeClass: 'low-stock', badgeText: '▲ Low Stock', displayQty: String(num) };
+      }
+      return { isValid: true, isAvailable: true, stock: num, badgeClass: 'in-stock', badgeText: '✓ In Stock', displayQty: String(num) };
+    }
+
     function renderProductGrid() {
-      let filtered = products.filter(p => p.status === 'ACTIVE');
+      let filtered = products.filter(isProductActive);
+
+      // 1. Category Filter
       if (selectedCategory !== 'ALL') {
-        filtered = filtered.filter(p => p.categoryId === selectedCategory);
+        filtered = filtered.filter(p => matchesCategory(p, selectedCategory));
+      }
+
+      // 2. Predictive Search Filter (Name, SKU, Barcode)
+      if (searchQuery && searchQuery.trim().length > 0) {
+        const q = searchQuery.trim().toLowerCase();
+        filtered = filtered.filter(p =>
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.sku && p.sku.toLowerCase().includes(q)) ||
+          (p.barcode && p.barcode.toLowerCase().includes(q))
+        );
       }
 
       if (filtered.length === 0) {
+        const isStoreCatalogEmpty = products.length === 0;
         productGrid.innerHTML = `
-          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-400);">
-            No products found in this category.
+          <div class="pos-empty-catalog">
+            <div class="pos-empty-catalog-icon">${isStoreCatalogEmpty ? '📦' : '🔍'}</div>
+            <div class="pos-empty-catalog-title">${isStoreCatalogEmpty ? 'Store Catalog Is Empty' : 'No matching products found'}</div>
+            <div class="pos-empty-catalog-desc">
+              ${isStoreCatalogEmpty
+            ? 'No active products found in this store catalog. Add items in the Products module or click reload.'
+            : (searchQuery ? `No items found matching "${escapeHtml(searchQuery)}" in this view.` : 'No products available in this category.')}
+            </div>
+            ${isStoreCatalogEmpty ? `
+              <div style="display: flex; gap: 10px; margin-top: 14px;">
+                <button class="btn btn-primary" id="btn-reload-catalog" style="font-size: 13px;">
+                  🔄 Reload Catalog
+                </button>
+                <a href="products.html" class="btn btn-secondary" style="font-size: 13px; text-decoration: none; display: inline-flex; align-items: center;">
+                  ➕ Add Products
+                </a>
+              </div>
+            ` : (searchQuery || selectedCategory !== 'ALL' ? `
+              <button class="btn btn-secondary" id="btn-reset-pos-filter" style="font-size: 13px; margin-top: 10px;">
+                Reset Filter & Search
+              </button>
+            ` : '')}
           </div>
         `;
+
+        document.getElementById('btn-reload-catalog')?.addEventListener('click', () => {
+          initPos();
+        });
+
+        document.getElementById('btn-reset-pos-filter')?.addEventListener('click', () => {
+          searchQuery = '';
+          selectedCategory = 'ALL';
+          barcodeInput.value = '';
+          btnClearSearch.style.display = 'none';
+          renderCategoryPills();
+          renderProductGrid();
+          barcodeInput.focus();
+        });
+
         return;
       }
 
-      productGrid.innerHTML = filtered.map(prod => `
-        <div class="pos-product-card" data-id="${prod.id}">
-          <div style="font-size: 28px; margin-bottom: 6px; text-align: center;">
-            ${getProductIcon(prod.name)}
-          </div>
-          <div class="pos-product-name" title="${prod.name}">${prod.name}</div>
-          <div style="font-size: 11px; color: var(--gray-400); margin-bottom: 4px;">${prod.sku || ''}</div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-            <div>
-              <div class="pos-product-price">₹${prod.sellingPrice?.toFixed(2) || '0.00'}</div>
-              <div class="pos-product-stock">Stock: ${prod.currentStock || 0} ${prod.unit || ''}</div>
+      productGrid.innerHTML = filtered.map(prod => {
+        const stockStatus = resolveStockStatus(prod);
+        const isUnavailable = !stockStatus.isAvailable;
+
+        // Stock Badge HTML
+        const stockBadgeHtml = `<span class="stock-badge ${stockStatus.badgeClass}" title="${escapeHtml(stockStatus.badgeText)}">${stockStatus.badgeText}</span>`;
+
+        // Active Cart Quantity Badge
+        const cartQty = getCartQuantityForProduct(prod.id);
+        const cartBadgeHtml = cartQty > 0
+          ? `<span class="cart-qty-badge" title="${cartQty} in current cart">${cartQty} in cart</span>`
+          : '';
+
+        const highlightedName = highlightSearchMatch(prod.name, searchQuery);
+        const highlightedSku = highlightSearchMatch(prod.sku || '', searchQuery);
+        const highlightedBarcode = prod.barcode && searchQuery && prod.barcode.toLowerCase().includes(searchQuery.toLowerCase())
+          ? `<span style="font-size: 10px; color: var(--gray-400);">Barcode: ${highlightSearchMatch(prod.barcode, searchQuery)}</span>`
+          : '';
+
+        const buttonText = !stockStatus.isValid ? 'Unavailable' : (stockStatus.stock <= 0 ? 'Sold Out' : '+ Add');
+
+        return `
+          <div class="pos-product-card ${isUnavailable ? 'out-of-stock' : ''}" data-id="${escapeHtml(prod.id)}" tabindex="${isUnavailable ? '-1' : '0'}" role="button" aria-disabled="${isUnavailable}">
+            <div class="pos-card-badges">
+              ${stockBadgeHtml}
+              ${cartBadgeHtml}
             </div>
-            <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; border-radius: var(--radius-sm);">+ Add</button>
+            <div style="font-size: 28px; margin-bottom: 6px; text-align: center;">
+              ${getProductIcon(prod.name)}
+            </div>
+            <div class="pos-product-name" title="${escapeHtml(prod.name)}">${highlightedName}</div>
+            <div class="pos-product-meta">
+              <span>${highlightedSku}</span>
+              ${highlightedBarcode}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
+              <div>
+                <div class="pos-product-price">₹${prod.sellingPrice?.toFixed(2) || '0.00'}</div>
+                <div class="pos-product-stock-qty">Stock: ${stockStatus.displayQty} ${escapeHtml(prod.unit || '')}</div>
+              </div>
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; border-radius: var(--radius-sm);" ${isUnavailable ? 'disabled title="Product unavailable"' : ''}>
+                ${buttonText}
+              </button>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       productGrid.querySelectorAll('.pos-product-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const prod = products.find(p => p.id === card.dataset.id && p.status === 'ACTIVE');
+        card.addEventListener('click', (e) => {
+          if (card.classList.contains('out-of-stock')) {
+            showToast('Item is out of stock or unavailable and cannot be added', 'error');
+            return;
+          }
+          const prod = products.find(p => p.id === card.dataset.id && isProductActive(p));
           if (prod) addToCart(prod);
+        });
+
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            card.click();
+          }
         });
       });
     }
@@ -567,8 +814,18 @@
     }
 
     function addToCart(product) {
-      if (!product || product.status !== 'ACTIVE') {
+      if (!product || !isProductActive(product)) {
         showToast('Only active products can be added to the cart', 'error');
+        return;
+      }
+
+      const stockStatus = resolveStockStatus(product);
+      if (!stockStatus.isValid) {
+        showToast('Cannot add: product inventory status is unknown or invalid', 'error');
+        return;
+      }
+      if (stockStatus.stock <= 0) {
+        showToast('Cannot add: product is out of stock', 'error');
         return;
       }
 
@@ -588,6 +845,7 @@
         });
       }
       renderCart();
+      renderProductGrid(); // Re-render grid to synchronize "in cart" badges
     }
 
     function updateCartQty(productId, delta) {
@@ -601,11 +859,13 @@
         item.total = item.quantity * item.unitPrice;
       }
       renderCart();
+      renderProductGrid(); // Re-render grid to synchronize "in cart" badges
     }
 
     function removeFromCart(productId) {
       cart = cart.filter(i => i.productId !== productId);
       renderCart();
+      renderProductGrid(); // Re-render grid to synchronize "in cart" badges
     }
 
     function calculateCartTotals() {
@@ -673,6 +933,7 @@
       if (cart.length > 0 && confirm('Clear all items from current order?')) {
         cart = [];
         renderCart();
+        renderProductGrid(); // Re-render grid to clear all "in cart" badges
       }
     });
 
@@ -825,7 +1086,7 @@
           const rawProds = Array.isArray(prodsRes) ? prodsRes : (prodsRes.data || []);
           products = rawProds.filter(p => p.status === 'ACTIVE');
           renderProductGrid();
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Show Thermal Receipt Preview
         renderThermalReceipt(sale, totals, tendered);
@@ -941,4 +1202,5 @@
     initPos();
   </script>
 </body>
+
 </html>

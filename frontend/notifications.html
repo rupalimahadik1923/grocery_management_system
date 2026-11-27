@@ -10,36 +10,101 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Notifications UI */
+    .notif-header-bar {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      max-width: 960px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 18px;
+      font-size: 13.5px;
+    }
     .notif-feed {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      max-width: 800px;
+      gap: 14px;
+      max-width: 960px;
     }
     .notif-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       gap: 16px;
       align-items: flex-start;
       box-shadow: var(--shadow-sm);
-      transition: all var(--transition-fast);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .notif-card:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
     .notif-card.unread {
       border-left: 4px solid var(--primary-500);
       background: #fbfdff;
     }
     .notif-icon {
-      font-size: 28px;
+      font-size: 24px;
       width: 48px;
       height: 48px;
       background: var(--gray-100);
+      border: 1px solid var(--gray-200);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+    }
+    .notif-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-notif-action {
+      height: 32px;
+      padding: 0 13px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      border: 1px solid var(--gray-300);
+      background: #ffffff;
+      color: var(--gray-700);
+      text-decoration: none !important;
+      transition: all var(--transition-fast);
+    }
+    .btn-notif-action:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-400);
+      color: var(--gray-900);
+    }
+    .btn-notif-danger {
+      color: #be123c;
+      border-color: #fecdd3;
+      background: #fff1f2;
+    }
+    .btn-notif-danger:hover {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: #9f1239;
     }
   </style>
 </head>
@@ -49,14 +114,14 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; max-width: 800px;">
+
+        <div class="notif-header-bar">
           <div>
-            <h2 style="font-size: 18px; font-weight: 700; color: var(--gray-900);">Alerts & Operational Notifications</h2>
-            <div style="font-size: 13px; color: var(--gray-500);">Real-time alerts for low stock levels, expiring batches, and purchase receipts.</div>
+            <h2 style="font-size: 18px; font-weight: 700; color: var(--gray-900);">Alerts &amp; Operational Notifications</h2>
+            <div style="font-size: 13px; color: var(--gray-500); margin-top: 2px;">Real-time alerts for low stock levels, expiring batches, and purchase receipts.</div>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary" id="btn-mark-all-read">✅ Mark All Read</button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-secondary btn-toolbar" id="btn-mark-all-read">✅ Mark All Read</button>
           </div>
         </div>
 
@@ -79,6 +144,16 @@
 
     let notifications = [];
     const container = document.getElementById('notif-feed-container');
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function loadNotifications() {
       try {
@@ -109,19 +184,19 @@
         else if (n.type === 'PURCHASE') icon = '🚚';
 
         return `
-          <div class="notif-card ${!n.read ? 'unread' : ''}" data-id="${n.id}">
+          <div class="notif-card ${!n.read ? 'unread' : ''}" data-id="${escapeHtml(n.id)}">
             <div class="notif-icon">${icon}</div>
             <div style="flex: 1;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900);">${n.title}</h4>
-                <span style="font-size: 11px; color: var(--gray-400);">${n.createdAt ? n.createdAt.replace('T', ' ').slice(0, 16) : ''}</span>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                <h4 style="font-size: 14.5px; font-weight: 700; color: var(--gray-900);">${escapeHtml(n.title)}</h4>
+                <span style="font-size: 12px; color: var(--gray-400); white-space: nowrap;">${n.createdAt ? escapeHtml(String(n.createdAt).replace('T', ' ').slice(0, 16)) : ''}</span>
               </div>
-              <p style="font-size: 13px; color: var(--gray-600); margin: 6px 0 10px;">${n.message}</p>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                ${n.targetUrl ? `<a href="${n.targetUrl}" class="btn btn-secondary" style="padding: 3px 8px; font-size: 11px;">View Item ↗</a>` : '<div></div>'}
-                <div style="display: flex; gap: 6px;">
-                  ${!n.read ? `<button class="btn btn-secondary btn-mark-read" data-id="${n.id}" style="padding: 3px 8px; font-size: 11px;">Mark Read</button>` : ''}
-                  <button class="btn btn-secondary btn-del-notif" data-id="${n.id}" style="padding: 3px 8px; font-size: 11px; color: var(--accent-rose);">Dismiss</button>
+              <p style="font-size: 13.5px; color: var(--gray-600); margin: 6px 0 12px;">${escapeHtml(n.message)}</p>
+              <div class="notif-actions">
+                ${n.targetUrl ? `<a href="${escapeHtml(n.targetUrl)}" class="btn-notif-action">View Item ↗</a>` : '<div></div>'}
+                <div style="display: flex; gap: 8px;">
+                  ${!n.read ? `<button type="button" class="btn-notif-action btn-mark-read" data-id="${escapeHtml(n.id)}">✓ Mark Read</button>` : ''}
+                  <button type="button" class="btn-notif-action btn-notif-danger btn-del-notif" data-id="${escapeHtml(n.id)}">Dismiss</button>
                 </div>
               </div>
             </div>
@@ -170,7 +245,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }

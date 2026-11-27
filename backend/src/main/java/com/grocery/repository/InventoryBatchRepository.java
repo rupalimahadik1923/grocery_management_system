@@ -18,4 +18,6 @@ public interface InventoryBatchRepository extends MongoRepository<InventoryBatch
     List<InventoryBatch> findByStoreId(String storeId);
     List<InventoryBatch> findByStoreIdAndExpiryDateBetweenAndStatus(String storeId, LocalDate startDate, LocalDate endDate, String status);
     boolean existsByStoreIdAndProductId(String storeId, String productId);
+    boolean existsByStoreIdAndBatchNumber(String storeId, String batchNumber);
+    java.util.Optional<InventoryBatch> findByStoreIdAndBatchNumber(String storeId, String batchNumber);
 }

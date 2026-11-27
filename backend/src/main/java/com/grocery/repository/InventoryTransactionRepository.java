@@ -14,4 +14,5 @@ public interface InventoryTransactionRepository extends MongoRepository<Inventor
     // Tenant-scoped queries
     List<InventoryTransaction> findTop50ByStoreIdOrderByCreatedAtDesc(String storeId);
     boolean existsByStoreIdAndProductId(String storeId, String productId);
+    java.util.Optional<InventoryTransaction> findByStoreIdAndIdempotencyKey(String storeId, String idempotencyKey);
 }

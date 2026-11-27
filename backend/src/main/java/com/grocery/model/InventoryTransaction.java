@@ -2,13 +2,17 @@ package com.grocery.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document(collection = "inventory_transactions")
-@CompoundIndex(name = "storeId_createdAt_idx", def = "{'storeId': 1, 'createdAt': -1}")
+@CompoundIndexes({
+    @CompoundIndex(name = "storeId_createdAt_idx", def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(name = "storeId_idempotencyKey_partial_idx", def = "{'storeId': 1, 'idempotencyKey': 1}", unique = true, partialFilter = "{'idempotencyKey': {'$type': 'string'}}")
+})
 public class InventoryTransaction {
 
     @Id
@@ -29,6 +33,9 @@ public class InventoryTransaction {
     private String referenceId;
     private String performedBy;
     private String notes;
+
+    private String idempotencyKey;
+    private String idempotencyFingerprint;
 
     @Indexed
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -83,6 +90,12 @@ public class InventoryTransaction {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
+
+    public String getIdempotencyFingerprint() { return idempotencyFingerprint; }
+    public void setIdempotencyFingerprint(String idempotencyFingerprint) { this.idempotencyFingerprint = idempotencyFingerprint; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

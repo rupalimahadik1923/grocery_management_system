@@ -19,7 +19,8 @@ import java.util.UUID;
 @Document(collection = "sales")
 @CompoundIndexes({
     @CompoundIndex(name = "storeId_createdAt_idx", def = "{'storeId': 1, 'createdAt': -1}"),
-    @CompoundIndex(name = "storeId_receiptNumber_idx", def = "{'storeId': 1, 'receiptNumber': 1}")
+    @CompoundIndex(name = "storeId_receiptNumber_unique_idx", def = "{'storeId': 1, 'receiptNumber': 1}", unique = true),
+    @CompoundIndex(name = "storeId_idempotencyKey_partial_idx", def = "{'storeId': 1, 'idempotencyKey': 1}", unique = true, partialFilter = "{'idempotencyKey': {'$type': 'string'}}")
 })
 public class Sale {
 
@@ -29,8 +30,12 @@ public class Sale {
     @Indexed
     private String storeId;
 
-    @Indexed(unique = true)
     private String receiptNumber;
+
+    @Indexed
+    private String idempotencyKey;
+
+    private String idempotencyFingerprint;
 
     private List<SaleItem> items = new ArrayList<>();
 
@@ -149,6 +154,12 @@ public class Sale {
 
     public String getReceiptNumber() { return receiptNumber; }
     public void setReceiptNumber(String receiptNumber) { this.receiptNumber = receiptNumber; }
+
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
+
+    public String getIdempotencyFingerprint() { return idempotencyFingerprint; }
+    public void setIdempotencyFingerprint(String idempotencyFingerprint) { this.idempotencyFingerprint = idempotencyFingerprint; }
 
     public List<SaleItem> getItems() { return items; }
     public void setItems(List<SaleItem> items) { this.items = items; }

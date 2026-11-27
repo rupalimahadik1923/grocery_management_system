@@ -10,47 +10,151 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop-optimized Categories Page UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 900px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
     }
-    .metric-mini-val {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--gray-900);
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     .metric-mini-lbl {
       font-size: 12px;
       color: var(--gray-500);
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
+    .metric-mini-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1.15;
+    }
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
+    }
+
+    /* Toolbar */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
     }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .status-filter-select {
+      width: 170px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .view-segmented {
+      display: inline-flex;
+      background: var(--gray-100);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--gray-200);
+      gap: 4px;
+    }
+    .view-toggle-btn {
+      padding: 7px 15px;
+      background: transparent;
+      color: var(--gray-600);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .view-toggle-btn:hover {
+      color: var(--gray-900);
+    }
+    .view-toggle-btn.active {
+      background: #ffffff;
+      color: var(--primary-700);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-create-cat {
+      height: 40px;
+      padding: 0 20px;
+      font-size: 13.5px;
+    }
+
+    /* Category Cards Grid */
     .category-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 18px;
     }
     .category-card {
@@ -62,41 +166,192 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all var(--transition-fast);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
     }
     .category-card:hover {
+      transform: translateY(-2px);
       box-shadow: var(--shadow-md);
-      border-color: var(--primary-400);
+      border-color: var(--primary-300);
     }
     .category-card-top {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .category-icon-box {
-      font-size: 36px;
-      background: var(--gray-100);
-      width: 56px;
-      height: 56px;
+      font-size: 32px;
+      background: linear-gradient(135deg, var(--primary-50), var(--gray-100));
+      border: 1px solid var(--gray-200);
+      width: 58px;
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: var(--radius-md);
+      flex-shrink: 0;
     }
-    .view-toggle-btn {
-      padding: 8px 14px;
+    .category-meta-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .order-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-500);
       background: var(--gray-100);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+    .category-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .category-slug {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11.5px;
+      color: var(--gray-500);
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      padding: 1px 7px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+    .category-desc {
+      font-size: 13px;
+      color: var(--gray-600);
+      line-height: 1.45;
+      min-height: 38px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .category-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid var(--gray-100);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-action {
+      height: 34px;
+      padding: 0 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border: 1px solid var(--gray-300);
+      background: #ffffff;
+      color: var(--gray-700);
+      transition: all var(--transition-fast);
+      box-shadow: none;
+    }
+    .btn-action:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-400);
+      color: var(--gray-900);
+      transform: translateY(-1px);
+    }
+    .btn-action-danger {
+      color: #be123c;
+      border-color: #fecdd3;
+      background: #fff1f2;
+    }
+    .btn-action-danger:hover {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: #9f1239;
+    }
+
+    /* Symbol Picker in Modal */
+    .symbol-field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .symbol-custom-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .symbol-preview-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      background: var(--primary-50);
+      border: 2px solid var(--primary-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .symbol-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 12px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      max-height: 210px;
+      overflow-y: auto;
+    }
+    .symbol-option-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 4px;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
       border-radius: var(--radius-md);
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid var(--gray-300);
+      transition: all var(--transition-fast);
     }
-    .view-toggle-btn.active {
-      background: var(--primary-600);
-      color: #ffffff;
+    .symbol-option-btn:hover {
+      border-color: var(--primary-400);
+      background: var(--primary-50);
+      transform: translateY(-1px);
+    }
+    .symbol-option-btn.selected {
       border-color: var(--primary-600);
+      background: var(--primary-100);
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    .symbol-option-emoji {
+      font-size: 22px;
+      line-height: 1.1;
+    }
+    .symbol-option-name {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gray-600);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
   </style>
 </head>
@@ -106,48 +361,59 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- Metrics Bar -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-cats">0</div>
               <div class="metric-mini-lbl">Total Categories</div>
+              <div class="metric-mini-val" id="metric-total-cats">0</div>
             </div>
-            <div style="font-size: 30px;">🏷️</div>
+            <div class="metric-mini-icon">🏷️</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-assigned" style="color: var(--primary-700);">0</div>
               <div class="metric-mini-lbl">Assigned Products</div>
+              <div class="metric-mini-val" id="metric-total-assigned" style="color: var(--primary-700);">0</div>
             </div>
-            <div style="font-size: 30px;">📦</div>
+            <div class="metric-mini-icon">📦</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-active-cats" style="color: var(--primary-600);">0</div>
               <div class="metric-mini-lbl">Active in POS</div>
+              <div class="metric-mini-val" id="metric-active-cats" style="color: var(--primary-600);">0</div>
             </div>
-            <div style="font-size: 30px;">✅</div>
+            <div class="metric-mini-icon">✅</div>
           </div>
         </div>
 
         <!-- Toolbar & View Switcher -->
         <div class="toolbar-container">
-          <div style="display: flex; gap: 10px; flex: 1; max-width: 400px;">
-            <input 
-              type="text" 
-              id="category-search" 
-              class="form-control" 
-              placeholder="Search category name..." 
-            />
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <div style="display: flex; gap: 4px; margin-right: 8px;">
-              <button class="view-toggle-btn active" id="btn-view-cards">Card View 🗂️</button>
-              <button class="view-toggle-btn" id="btn-view-table">Table View 📋</button>
+          <div class="toolbar-filters">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="category-search"
+                class="form-control"
+                placeholder="Search category name or slug..."
+              />
             </div>
-            <button class="btn btn-primary" id="btn-add-category">➕ Create Category</button>
+            <select id="category-status-filter" class="form-control status-filter-select">
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active in POS</option>
+              <option value="HIDDEN">Hidden</option>
+            </select>
+          </div>
+          <div class="toolbar-actions">
+            <div class="view-segmented" role="group" aria-label="View mode">
+              <button type="button" class="view-toggle-btn active" id="btn-view-cards">🗂️ Card View</button>
+              <button type="button" class="view-toggle-btn" id="btn-view-table">📋 Table View</button>
+            </div>
+            <button type="button" class="btn btn-primary btn-create-cat" id="btn-add-category">
+              <span class="btn-icon-circle">+</span>
+              <span>Create Category</span>
+            </button>
           </div>
         </div>
 
@@ -158,17 +424,17 @@
 
         <!-- TABLE VIEW -->
         <div id="category-table-container" class="table-container" style="display: none;">
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
-                <th>Icon</th>
+                <th style="width: 72px; text-align: center;">Symbol</th>
                 <th>Category Name</th>
                 <th>Slug</th>
                 <th>Description</th>
-                <th>Display Order</th>
-                <th>Products Count</th>
-                <th>Status</th>
-                <th style="text-align: right;">Actions</th>
+                <th style="width: 90px; text-align: center;">Order</th>
+                <th style="width: 120px;">Products</th>
+                <th style="width: 110px;">Status</th>
+                <th style="width: 170px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="category-table-body">
@@ -183,52 +449,69 @@
 
   <!-- ADD / EDIT CATEGORY MODAL -->
   <div class="modal-overlay" id="category-modal">
-    <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
         <h3 class="modal-title" id="cat-modal-title">Create Category</h3>
-        <button class="modal-close-btn" id="close-cat-modal">&times;</button>
+        <button type="button" class="modal-close-btn" id="close-cat-modal">&times;</button>
       </div>
       <form id="category-form">
         <div class="modal-body" style="padding: 20px 24px;">
           <input type="hidden" id="cat-id" />
-          
+
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
-              <label class="form-label">Category Name *</label>
-              <input type="text" id="cat-name" class="form-control" required placeholder="e.g. Dairy & Milk" />
+              <label class="form-label" for="cat-name">Category Name *</label>
+              <input type="text" id="cat-name" class="form-control" required placeholder="e.g. Fresh Vegetables" />
             </div>
             <div class="form-group" style="flex: 1;">
-              <label class="form-label">Emoji / Icon</label>
-              <input type="text" id="cat-icon" class="form-control" placeholder="🥛" maxlength="4" style="text-align: center; font-size: 20px;" />
+              <label class="form-label" for="cat-order">Display Order</label>
+              <input type="number" id="cat-order" class="form-control" value="1" min="1" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="symbol-field-header">
+              <label class="form-label" for="cat-icon" style="margin: 0;">Grocery Symbol / Icon</label>
+              <span style="font-size: 12px; color: var(--gray-500);">Pick a grocery symbol or type your own</span>
+            </div>
+            <div class="symbol-custom-row">
+              <div class="symbol-preview-badge" id="symbol-preview" title="Selected symbol">🏷️</div>
+              <input
+                type="text"
+                id="cat-icon"
+                class="form-control"
+                placeholder="🏷️"
+                maxlength="8"
+                style="max-width: 140px; text-align: center; font-size: 20px;"
+              />
+              <span style="font-size: 12px; color: var(--gray-500);">Shown on POS &amp; category cards</span>
+            </div>
+            <div class="symbol-picker-grid" id="symbol-picker-grid">
+              <!-- Populated via JS -->
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Slug / Key</label>
-              <input type="text" id="cat-slug" class="form-control" placeholder="dairy-milk" />
+              <label class="form-label" for="cat-slug">Slug / Key</label>
+              <input type="text" id="cat-slug" class="form-control" placeholder="fresh-vegetables" />
             </div>
             <div class="form-group">
-              <label class="form-label">Display Order</label>
-              <input type="number" id="cat-order" class="form-control" value="1" />
+              <label class="form-label" for="cat-active">Visibility Status</label>
+              <select id="cat-active" class="form-control">
+                <option value="true">Active (Visible in POS)</option>
+                <option value="false">Hidden / Inactive</option>
+              </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <textarea id="cat-desc" class="form-control" rows="2" placeholder="Brief description of items..."></textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Visibility Status</label>
-            <select id="cat-active" class="form-control">
-              <option value="true">Active (Visible in POS)</option>
-              <option value="false">Hidden / Inactive</option>
-            </select>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="cat-desc">Description</label>
+            <textarea id="cat-desc" class="form-control" rows="2" placeholder="Brief description of items in this category..."></textarea>
           </div>
         </div>
 
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-secondary" id="btn-cancel-cat">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-save-cat">Save Category</button>
         </div>
@@ -242,16 +525,100 @@
 
     Layout.init({ activePage: 'categories', title: 'Product Categories' });
 
+    const GROCERY_SYMBOLS = [
+      { emoji: '🥬', label: 'Veggies' },
+      { emoji: '🍎', label: 'Fruits' },
+      { emoji: '🥛', label: 'Dairy' },
+      { emoji: '🍞', label: 'Bakery' },
+      { emoji: '🌾', label: 'Grains' },
+      { emoji: '🥩', label: 'Meat' },
+      { emoji: '🐟', label: 'Seafood' },
+      { emoji: '🥚', label: 'Eggs' },
+      { emoji: '🥤', label: 'Drinks' },
+      { emoji: '☕', label: 'Tea/Coffee' },
+      { emoji: '🍿', label: 'Snacks' },
+      { emoji: '🍫', label: 'Sweets' },
+      { emoji: '🧂', label: 'Spices' },
+      { emoji: '🫒', label: 'Oils' },
+      { emoji: '🧊', label: 'Frozen' },
+      { emoji: '🧴', label: 'Personal' },
+      { emoji: '🧹', label: 'Household' },
+      { emoji: '🐾', label: 'Pet Care' },
+      { emoji: '👶', label: 'Baby' },
+      { emoji: '🌿', label: 'Organic' },
+      { emoji: '🥫', label: 'Canned' },
+      { emoji: '🍜', label: 'Noodles' },
+      { emoji: '🧀', label: 'Cheese' },
+      { emoji: '🏷️', label: 'General' }
+    ];
+
     let categories = [];
     let products = [];
     let currentView = 'cards';
+    let slugManuallyEdited = false;
 
     const searchInput = document.getElementById('category-search');
+    const statusFilter = document.getElementById('category-status-filter');
     const cardsContainer = document.getElementById('category-cards-container');
     const tableContainer = document.getElementById('category-table-container');
     const tableBody = document.getElementById('category-table-body');
     const catModal = document.getElementById('category-modal');
     const catForm = document.getElementById('category-form');
+    const catNameInput = document.getElementById('cat-name');
+    const catSlugInput = document.getElementById('cat-slug');
+    const catIconInput = document.getElementById('cat-icon');
+    const symbolPreview = document.getElementById('symbol-preview');
+    const symbolGrid = document.getElementById('symbol-picker-grid');
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderSymbolPicker() {
+      const current = catIconInput.value.trim() || '🏷️';
+      symbolPreview.textContent = current;
+      symbolGrid.innerHTML = GROCERY_SYMBOLS.map(s => `
+        <button
+          type="button"
+          class="symbol-option-btn ${current === s.emoji ? 'selected' : ''}"
+          data-emoji="${s.emoji}"
+          title="${s.label}"
+        >
+          <span class="symbol-option-emoji">${s.emoji}</span>
+          <span class="symbol-option-name">${s.label}</span>
+        </button>
+      `).join('');
+
+      symbolGrid.querySelectorAll('.symbol-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          catIconInput.value = btn.dataset.emoji;
+          renderSymbolPicker();
+        });
+      });
+    }
+
+    catIconInput.addEventListener('input', renderSymbolPicker);
+
+    catNameInput.addEventListener('input', () => {
+      const id = document.getElementById('cat-id').value;
+      if (!id && !slugManuallyEdited) {
+        catSlugInput.value = catNameInput.value
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
+    });
+
+    catSlugInput.addEventListener('input', () => {
+      slugManuallyEdited = catSlugInput.value.trim().length > 0;
+    });
 
     async function loadData() {
       try {
@@ -282,7 +649,19 @@
 
     function renderView() {
       const query = searchInput.value.toLowerCase().trim();
-      const filtered = categories.filter(c => !query || c.name.toLowerCase().includes(query) || (c.slug && c.slug.toLowerCase().includes(query)));
+      const status = statusFilter.value;
+      const filtered = categories
+        .filter(c => {
+          const matchesQuery = !query ||
+            (c.name && c.name.toLowerCase().includes(query)) ||
+            (c.slug && c.slug.toLowerCase().includes(query));
+          const isActive = c.active !== false;
+          const matchesStatus = status === 'ALL' ||
+            (status === 'ACTIVE' && isActive) ||
+            (status === 'HIDDEN' && !isActive);
+          return matchesQuery && matchesStatus;
+        })
+        .sort((a, b) => (a.displayOrder || 1) - (b.displayOrder || 1));
 
       if (currentView === 'cards') {
         cardsContainer.style.display = 'grid';
@@ -290,8 +669,8 @@
 
         if (filtered.length === 0) {
           cardsContainer.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-400);">
-              No categories found. Click "Create Category" to add one.
+            <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--gray-300); border-radius: var(--radius-lg); color: var(--gray-500);">
+              No categories match your filter. Click <strong>Create Category</strong> to add one.
             </div>
           `;
           return;
@@ -299,26 +678,35 @@
 
         cardsContainer.innerHTML = filtered.map(cat => {
           const count = getProductCountForCat(cat.id);
+          const icon = escapeHtml(cat.icon || '🏷️');
+          const name = escapeHtml(cat.name);
+          const slug = escapeHtml(cat.slug || '-');
+          const desc = escapeHtml(cat.description || 'No description provided.');
+          const order = cat.displayOrder || 1;
+          const isActive = cat.active !== false;
+
           return `
             <div class="category-card">
               <div>
                 <div class="category-card-top">
-                  <div class="category-icon-box">${cat.icon || '🏷️'}</div>
-                  <span class="badge ${cat.active !== false ? 'badge-success' : 'badge-neutral'}">
-                    ${cat.active !== false ? 'ACTIVE' : 'HIDDEN'}
-                  </span>
+                  <div class="category-icon-box">${icon}</div>
+                  <div class="category-meta-badges">
+                    <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'}">
+                      ${isActive ? 'ACTIVE' : 'HIDDEN'}
+                    </span>
+                    <span class="order-pill">Order #${order}</span>
+                  </div>
                 </div>
-                <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">${cat.name}</h3>
-                <p style="font-size: 12px; color: var(--gray-500); margin-bottom: 12px; min-height: 36px;">
-                  ${cat.description || 'No description provided.'}
-                </p>
+                <h3 class="category-title">${name}</h3>
+                <span class="category-slug">${slug}</span>
+                <p class="category-desc">${desc}</p>
               </div>
 
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--gray-100); padding-top: 12px; margin-top: 12px;">
+              <div class="category-card-footer">
                 <span class="badge badge-info" style="font-size: 12px; font-weight: 600;">📦 ${count} Products</span>
-                <div style="display: flex; gap: 6px;">
-                  <button class="btn btn-secondary btn-edit-cat" data-id="${cat.id}" style="padding: 4px 8px; font-size: 12px;" title="Edit">✏️</button>
-                  <button class="btn btn-secondary btn-del-cat" data-id="${cat.id}" style="padding: 4px 8px; font-size: 12px; color: var(--accent-rose);" title="Delete">🗑️</button>
+                <div class="card-actions">
+                  <button type="button" class="btn-action btn-edit-cat" data-id="${escapeHtml(cat.id)}" title="Edit category">✏️ Edit</button>
+                  <button type="button" class="btn-action btn-action-danger btn-del-cat" data-id="${escapeHtml(cat.id)}" title="Delete category">🗑️ Delete</button>
                 </div>
               </div>
             </div>
@@ -342,29 +730,37 @@
 
         tableBody.innerHTML = filtered.map(cat => {
           const count = getProductCountForCat(cat.id);
+          const icon = escapeHtml(cat.icon || '🏷️');
+          const name = escapeHtml(cat.name);
+          const slug = escapeHtml(cat.slug || '-');
+          const desc = escapeHtml(cat.description || '-');
+          const order = cat.displayOrder || 1;
+          const isActive = cat.active !== false;
+
           return `
             <tr>
-              <td style="font-size: 24px; text-align: center;">${cat.icon || '🏷️'}</td>
-              <td style="font-weight: 600; color: var(--gray-900);">${cat.name}</td>
-              <td style="font-family: monospace; font-size: 12px; color: var(--gray-600);">${cat.slug || '-'}</td>
-              <td style="color: var(--gray-600); font-size: 12px;">${cat.description || '-'}</td>
-              <td>${cat.displayOrder || 1}</td>
+              <td style="font-size: 24px; text-align: center;">${icon}</td>
+              <td style="font-weight: 600; color: var(--gray-900);">${name}</td>
+              <td><span class="category-slug" style="margin: 0;">${slug}</span></td>
+              <td style="color: var(--gray-600); font-size: 13px; max-width: 260px;">${desc}</td>
+              <td style="text-align: center; font-weight: 600;">${order}</td>
               <td><span class="badge badge-info">${count} items</span></td>
               <td>
-                <span class="badge ${cat.active !== false ? 'badge-success' : 'badge-neutral'}">
-                  ${cat.active !== false ? 'ACTIVE' : 'HIDDEN'}
+                <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'}">
+                  ${isActive ? 'ACTIVE' : 'HIDDEN'}
                 </span>
               </td>
               <td style="text-align: right;">
-                <button class="btn btn-secondary btn-edit-cat" data-id="${cat.id}" style="padding: 4px 8px; font-size: 12px;">✏️ Edit</button>
-                <button class="btn btn-secondary btn-del-cat" data-id="${cat.id}" style="padding: 4px 8px; font-size: 12px; color: var(--accent-rose);">🗑️</button>
+                <div class="card-actions" style="justify-content: flex-end;">
+                  <button type="button" class="btn-action btn-edit-cat" data-id="${escapeHtml(cat.id)}">✏️ Edit</button>
+                  <button type="button" class="btn-action btn-action-danger btn-del-cat" data-id="${escapeHtml(cat.id)}" title="Delete">🗑️</button>
+                </div>
               </td>
             </tr>
           `;
         }).join('');
       }
 
-      // Attach event listeners
       document.querySelectorAll('.btn-edit-cat').forEach(b => {
         b.addEventListener('click', () => openEditCategory(b.dataset.id));
       });
@@ -389,14 +785,19 @@
     });
 
     searchInput.addEventListener('input', renderView);
+    statusFilter.addEventListener('change', renderView);
 
     // Modal Events
     document.getElementById('btn-add-category').addEventListener('click', () => {
       document.getElementById('cat-modal-title').textContent = 'Create Category';
       catForm.reset();
       document.getElementById('cat-id').value = '';
+      catIconInput.value = '🥬';
+      document.getElementById('cat-order').value = categories.length + 1;
+      slugManuallyEdited = false;
+      renderSymbolPicker();
       catModal.classList.add('active');
-      document.getElementById('cat-name').focus();
+      catNameInput.focus();
     });
 
     document.getElementById('close-cat-modal').addEventListener('click', () => catModal.classList.remove('active'));
@@ -408,28 +809,30 @@
 
       document.getElementById('cat-modal-title').textContent = 'Edit Category';
       document.getElementById('cat-id').value = cat.id;
-      document.getElementById('cat-name').value = cat.name;
-      document.getElementById('cat-icon').value = cat.icon || '🏷️';
-      document.getElementById('cat-slug').value = cat.slug || '';
+      catNameInput.value = cat.name;
+      catIconInput.value = cat.icon || '🏷️';
+      catSlugInput.value = cat.slug || '';
       document.getElementById('cat-order').value = cat.displayOrder || 1;
       document.getElementById('cat-desc').value = cat.description || '';
       document.getElementById('cat-active').value = (cat.active !== false).toString();
+      slugManuallyEdited = true;
 
+      renderSymbolPicker();
       catModal.classList.add('active');
     }
 
     catForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('cat-id').value;
-      const name = document.getElementById('cat-name').value.trim();
-      const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/\s+/g, '-');
+      const name = catNameInput.value.trim();
+      const slug = catSlugInput.value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
       const payload = {
         name,
         slug,
-        icon: document.getElementById('cat-icon').value.trim() || '🏷️',
+        icon: catIconInput.value.trim() || '🏷️',
         description: document.getElementById('cat-desc').value.trim(),
-        displayOrder: parseInt(document.getElementById('cat-order').value) || 1,
+        displayOrder: parseInt(document.getElementById('cat-order').value, 10) || 1,
         active: document.getElementById('cat-active').value === 'true'
       };
 
@@ -473,11 +876,12 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }
 
+    renderSymbolPicker();
     loadData();
   </script>
 </body>

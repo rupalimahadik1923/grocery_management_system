@@ -10,43 +10,140 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
+    /* Laptop / Windows Desktop Sales History UI */
     .metrics-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 1100px) {
+      .metrics-bar {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+      }
+    }
+    @media (max-width: 640px) {
+      .metrics-bar {
+        grid-template-columns: 1fr;
+      }
     }
     .metric-mini-card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .metric-mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .metric-mini-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
     }
     .metric-mini-val {
       font-size: 24px;
       font-weight: 800;
       color: var(--gray-900);
+      line-height: 1.15;
     }
-    .metric-mini-lbl {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 500;
+    .metric-mini-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-100);
     }
+    .metric-mini-icon.blue {
+      background: var(--accent-blue-light);
+      border-color: #bfdbfe;
+    }
+    .metric-mini-icon.purple {
+      background: var(--accent-purple-light);
+      border-color: #ddd6fe;
+    }
+
+    /* Filter Toolbar */
     .toolbar-container {
       background: #ffffff;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 14px 18px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 560px;
+    }
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .search-input-wrap .form-control {
+      padding-left: 36px;
+      height: 40px;
+    }
+    .mode-filter-select {
+      width: 185px;
+      height: 40px;
+      padding: 8px 12px;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-toolbar {
+      height: 40px;
+      padding: 0 18px;
+      font-size: 13.5px;
+    }
+    .btn-table-action {
+      height: 34px;
+      padding: 0 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     /* Thermal Receipt View */
@@ -60,6 +157,7 @@
       max-width: 360px;
       margin: 0 auto;
       border: 1px dashed #cbd5e1;
+      border-radius: var(--radius-md);
     }
     .receipt-divider {
       border-top: 1px dashed #475569;
@@ -97,76 +195,78 @@
     <div class="main-wrapper">
       <div id="topbar-container"></div>
       <main class="content-body">
-        
+
         <!-- Metrics Ribbon -->
         <div class="metrics-bar">
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-total-revenue">₹0.00</div>
               <div class="metric-mini-lbl">Total Completed Revenue</div>
+              <div class="metric-mini-val" id="metric-total-revenue">₹0.00</div>
             </div>
-            <div style="font-size: 30px;">💰</div>
+            <div class="metric-mini-icon">💰</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-tx-count">0</div>
               <div class="metric-mini-lbl">Total Transactions</div>
+              <div class="metric-mini-val" id="metric-tx-count">0</div>
             </div>
-            <div style="font-size: 30px;">🧾</div>
+            <div class="metric-mini-icon purple">🧾</div>
           </div>
           <div class="metric-mini-card">
             <div>
-              <div class="metric-mini-val" id="metric-cash-total" style="color: var(--primary-700);">₹0.00</div>
               <div class="metric-mini-lbl">Cash Tendered</div>
+              <div class="metric-mini-val" id="metric-cash-total" style="color: var(--primary-700);">₹0.00</div>
             </div>
-            <div style="font-size: 30px;">💵</div>
+            <div class="metric-mini-icon">💵</div>
           </div>
           <div class="metric-mini-card">
             <div>
+              <div class="metric-mini-lbl">UPI &amp; Card Tendered</div>
               <div class="metric-mini-val" id="metric-upi-total" style="color: var(--accent-blue);">₹0.00</div>
-              <div class="metric-mini-lbl">UPI & Card Tendered</div>
             </div>
-            <div style="font-size: 30px;">📱</div>
+            <div class="metric-mini-icon blue">📱</div>
           </div>
         </div>
 
         <!-- Filter Toolbar -->
         <div class="toolbar-container">
-          <div style="display: flex; gap: 10px; flex: 1; flex-wrap: wrap;">
-            <input 
-              type="text" 
-              id="sales-search-input" 
-              class="form-control" 
-              style="max-width: 280px;" 
-              placeholder="Search receipt # or customer phone..." 
-            />
-            <select id="sales-mode-filter" class="form-control" style="max-width: 160px;">
+          <div class="toolbar-filters">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="sales-search-input"
+                class="form-control"
+                placeholder="Search receipt #, customer name, or phone..."
+              />
+            </div>
+            <select id="sales-mode-filter" class="form-control mode-filter-select">
               <option value="ALL">All Payment Modes</option>
               <option value="CASH">Cash</option>
               <option value="UPI">UPI</option>
               <option value="CARD">Card</option>
             </select>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary" id="btn-export-sales">📥 Export CSV</button>
-            <a href="pos.html" class="btn btn-primary">🛒 Launch POS</a>
+          <div class="toolbar-actions">
+            <button type="button" class="btn btn-secondary btn-toolbar" id="btn-export-sales">📥 Export CSV</button>
+            <a href="pos.html" class="btn btn-primary btn-toolbar" style="text-decoration: none;">🛒 Launch POS</a>
           </div>
         </div>
 
         <!-- Sales Records Table -->
         <div class="table-container">
-          <table class="data-table">
+          <table class="table data-table">
             <thead>
               <tr>
-                <th>Receipt #</th>
-                <th>Date & Time</th>
+                <th style="white-space: nowrap;">Receipt #</th>
+                <th style="white-space: nowrap;">Date &amp; Time</th>
                 <th>Cashier</th>
                 <th>Customer</th>
-                <th>Items Count</th>
-                <th>Mode</th>
-                <th>Total (₹)</th>
-                <th>Status</th>
-                <th style="text-align: right;">Action</th>
+                <th style="text-align: center; white-space: nowrap;">Items Count</th>
+                <th style="text-align: center; white-space: nowrap;">Mode</th>
+                <th style="text-align: right; white-space: nowrap;">Total (₹)</th>
+                <th style="text-align: center; white-space: nowrap;">Status</th>
+                <th style="text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
             <tbody id="sales-table-body">
@@ -185,21 +285,21 @@
 
   <!-- RECEIPT DETAIL MODAL -->
   <div class="modal-overlay" id="receipt-modal">
-    <div class="modal-content" style="max-width: 440px;">
+    <div class="modal-content" style="max-width: 460px;">
       <div class="modal-header">
         <h3 class="modal-title">Receipt Inspection</h3>
-        <button class="modal-close-btn" id="close-receipt-modal">&times;</button>
+        <button type="button" class="modal-close-btn" id="close-receipt-modal">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 16px;">
+      <div class="modal-body" style="padding: 18px 24px;">
         <div id="print-area">
           <div class="receipt-container" id="receipt-modal-content">
             <!-- Dynamic Receipt -->
           </div>
         </div>
       </div>
-      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px;">
-        <button class="btn btn-secondary" id="btn-close-receipt">Close</button>
-        <button class="btn btn-primary" id="btn-print-receipt">🖨️ Print Receipt</button>
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" id="btn-close-receipt">Close</button>
+        <button type="button" class="btn btn-primary" id="btn-print-receipt">🖨️ Print Receipt</button>
       </div>
     </div>
   </div>
@@ -216,6 +316,20 @@
     const modeFilter = document.getElementById('sales-mode-filter');
     const receiptModal = document.getElementById('receipt-modal');
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getPaymentMode(sale) {
+      return (sale.paymentMethod || sale.paymentMode || 'CASH').toUpperCase();
+    }
+
     async function loadSales() {
       try {
         const res = await Api.get('/sales').catch(() => []);
@@ -230,8 +344,8 @@
 
     function updateMetrics() {
       const totalRev = sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0);
-      const cashRev = sales.filter(s => s.paymentMode === 'CASH').reduce((sum, s) => sum + (s.grandTotal || 0), 0);
-      const upiCardRev = sales.filter(s => s.paymentMode !== 'CASH').reduce((sum, s) => sum + (s.grandTotal || 0), 0);
+      const cashRev = sales.filter(s => getPaymentMode(s) === 'CASH').reduce((sum, s) => sum + (s.grandTotal || 0), 0);
+      const upiCardRev = sales.filter(s => getPaymentMode(s) !== 'CASH').reduce((sum, s) => sum + (s.grandTotal || 0), 0);
 
       document.getElementById('metric-total-revenue').textContent = `₹${totalRev.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
       document.getElementById('metric-tx-count').textContent = sales.length;
@@ -243,13 +357,13 @@
       const q = searchInput.value.toLowerCase().trim();
       const mode = modeFilter.value;
 
-      let filtered = sales.filter(s => {
-        const matchesQ = !q || 
+      const filtered = sales.filter(s => {
+        const matchesQ = !q ||
           (s.receiptNumber && s.receiptNumber.toLowerCase().includes(q)) ||
           (s.customerPhone && s.customerPhone.includes(q)) ||
           (s.customerName && s.customerName.toLowerCase().includes(q));
 
-        const matchesMode = mode === 'ALL' || s.paymentMode === mode;
+        const matchesMode = mode === 'ALL' || getPaymentMode(s) === mode;
         return matchesQ && matchesMode;
       });
 
@@ -265,27 +379,30 @@
       }
 
       tableBody.innerHTML = filtered.map(s => {
+        const payMode = getPaymentMode(s);
         let modeBadge = `<span class="badge badge-success">CASH</span>`;
-        if (s.paymentMode === 'UPI') modeBadge = `<span class="badge badge-info">UPI</span>`;
-        else if (s.paymentMode === 'CARD') modeBadge = `<span class="badge badge-warning">CARD</span>`;
+        if (payMode === 'UPI') modeBadge = `<span class="badge badge-info">UPI</span>`;
+        else if (payMode === 'CARD') modeBadge = `<span class="badge badge-warning">CARD</span>`;
 
-        const itemsCount = (s.items || []).reduce((sum, i) => sum + i.quantity, 0);
+        const itemsCount = (s.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
+        const statusText = s.status || 'COMPLETED';
+        const statusClass = statusText === 'REFUNDED' ? 'badge-danger' : (statusText === 'PARTIALLY_RETURNED' ? 'badge-warning' : 'badge-success');
 
         return `
           <tr>
-            <td style="font-family: monospace; font-weight: 700; color: var(--primary-700);">${s.receiptNumber}</td>
-            <td style="font-size: 12px; color: var(--gray-600);">${s.createdAt ? s.createdAt.replace('T', ' ').slice(0, 19) : '-'}</td>
-            <td>${s.cashierName || 'Staff'}</td>
+            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--primary-700); white-space: nowrap;">${escapeHtml(s.receiptNumber)}</td>
+            <td style="font-size: 13px; color: var(--gray-600); white-space: nowrap;">${s.createdAt ? escapeHtml(String(s.createdAt).replace('T', ' ').slice(0, 19)) : '-'}</td>
+            <td>${escapeHtml(s.cashierName || 'Staff')}</td>
             <td>
-              <div>${s.customerName || 'Walk-in Customer'}</div>
-              ${s.customerPhone ? `<div style="font-size: 11px; color: var(--gray-500);">${s.customerPhone}</div>` : ''}
+              <div style="font-weight: 600; color: var(--gray-900);">${escapeHtml(s.customerName || 'Walk-in Customer')}</div>
+              ${s.customerPhone ? `<div style="font-size: 11.5px; color: var(--gray-500);">${escapeHtml(s.customerPhone)}</div>` : ''}
             </td>
-            <td>${itemsCount} items</td>
-            <td>${modeBadge}</td>
-            <td style="font-weight: 700; font-size: 14px; color: var(--gray-900);">₹${s.grandTotal?.toFixed(2)}</td>
-            <td><span class="badge badge-success">${s.status || 'COMPLETED'}</span></td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary btn-view-receipt" data-id="${s.id}" style="padding: 4px 10px; font-size: 12px;">
+            <td style="text-align: center; white-space: nowrap;">${itemsCount} items</td>
+            <td style="text-align: center; white-space: nowrap;">${modeBadge}</td>
+            <td style="text-align: right; font-weight: 700; font-size: 14px; color: var(--gray-900); white-space: nowrap;">₹${Number(s.grandTotal || 0).toFixed(2)}</td>
+            <td style="text-align: center; white-space: nowrap;"><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button type="button" class="btn btn-secondary btn-table-action btn-view-receipt" data-id="${escapeHtml(s.id)}">
                 👁️ View Receipt
               </button>
             </td>
@@ -305,6 +422,7 @@
       const sale = sales.find(s => s.id === saleId);
       if (!sale) return;
 
+      const taxVal = sale.taxAmount ?? ((sale.cgst || 0) + (sale.sgst || 0));
       const receiptContent = document.getElementById('receipt-modal-content');
       receiptContent.innerHTML = `
         <div style="text-align: center;">
@@ -312,10 +430,10 @@
           <div>Green Valley Complex, Bengaluru</div>
           <div>GSTIN: 29ABCDE1234F1Z5 | Ph: 9876543210</div>
           <div class="receipt-divider"></div>
-          <div class="receipt-row"><span>Receipt #:</span><strong>${sale.receiptNumber}</strong></div>
-          <div class="receipt-row"><span>Date:</span><span>${sale.createdAt ? sale.createdAt.replace('T', ' ').slice(0, 19) : '-'}</span></div>
-          <div class="receipt-row"><span>Cashier:</span><span>${sale.cashierName || 'Staff'}</span></div>
-          <div class="receipt-row"><span>Customer:</span><span>${sale.customerName || 'Walk-in'}</span></div>
+          <div class="receipt-row"><span>Receipt #:</span><strong>${escapeHtml(sale.receiptNumber)}</strong></div>
+          <div class="receipt-row"><span>Date:</span><span>${sale.createdAt ? escapeHtml(String(sale.createdAt).replace('T', ' ').slice(0, 19)) : '-'}</span></div>
+          <div class="receipt-row"><span>Cashier:</span><span>${escapeHtml(sale.cashierName || 'Staff')}</span></div>
+          <div class="receipt-row"><span>Customer:</span><span>${escapeHtml(sale.customerName || 'Walk-in')}</span></div>
         </div>
 
         <div class="receipt-divider"></div>
@@ -332,10 +450,10 @@
           <tbody>
             ${(sale.items || []).map(i => `
               <tr>
-                <td>${i.productName}</td>
-                <td style="text-align: center;">${i.quantity}</td>
-                <td style="text-align: right;">₹${i.unitPrice?.toFixed(2)}</td>
-                <td style="text-align: right;">₹${i.total?.toFixed(2)}</td>
+                <td>${escapeHtml(i.productName)}</td>
+                <td style="text-align: center;">${Number(i.quantity || 0)}</td>
+                <td style="text-align: right;">₹${Number(i.unitPrice || 0).toFixed(2)}</td>
+                <td style="text-align: right;">₹${Number(i.lineTotal ?? i.total ?? 0).toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -343,17 +461,17 @@
 
         <div class="receipt-divider"></div>
 
-        <div class="receipt-row"><span>Subtotal:</span><span>₹${sale.subtotal?.toFixed(2)}</span></div>
+        <div class="receipt-row"><span>Subtotal:</span><span>₹${Number(sale.subtotal || 0).toFixed(2)}</span></div>
         ${sale.discountAmount > 0 ? `
-          <div class="receipt-row"><span>Discount:</span><span>-₹${sale.discountAmount?.toFixed(2)}</span></div>
+          <div class="receipt-row"><span>Discount:</span><span>-₹${Number(sale.discountAmount).toFixed(2)}</span></div>
         ` : ''}
-        <div class="receipt-row"><span>Taxes (5%):</span><span>₹${sale.taxAmount?.toFixed(2)}</span></div>
+        <div class="receipt-row"><span>Taxes:</span><span>₹${Number(taxVal || 0).toFixed(2)}</span></div>
         <div class="receipt-divider"></div>
         <div class="receipt-row" style="font-size: 15px; font-weight: bold;">
           <span>GRAND TOTAL:</span>
-          <span>₹${sale.grandTotal?.toFixed(2)}</span>
+          <span>₹${Number(sale.grandTotal || 0).toFixed(2)}</span>
         </div>
-        <div class="receipt-row"><span>Payment Mode:</span><span>${sale.paymentMode}</span></div>
+        <div class="receipt-row"><span>Payment Mode:</span><span>${escapeHtml(getPaymentMode(sale))}</span></div>
 
         <div class="receipt-divider"></div>
         <div style="text-align: center; font-size: 11px; color: #64748b; margin-top: 10px;">
@@ -382,7 +500,7 @@
         `"${s.cashierName || ''}"`,
         `"${s.customerName || ''}"`,
         `"${s.customerPhone || ''}"`,
-        `"${s.paymentMode}"`,
+        `"${getPaymentMode(s)}"`,
         s.grandTotal,
         `"${s.status || 'COMPLETED'}"`
       ]);
@@ -402,7 +520,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3500);
     }
